@@ -6,7 +6,7 @@
 ║  EXECUÇÃO LOCAL:                                                     ║
 ║    pip install streamlit pandas numpy plotly openpyxl matplotlib     ║
 ║    streamlit run dashboard_lab_hu.py                                 ║
-║                                                                      ║
+║                                                                       ║
 ║  COMPARTILHAR VIA STREAMLIT COMMUNITY CLOUD:                         ║
 ║    1. Suba este arquivo + dados_lab_hu.xlsx no GitHub                ║
 ║    2. Acesse share.streamlit.io → conecte o repositório              ║
