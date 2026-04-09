@@ -288,7 +288,7 @@ st.markdown(
     f"<h1 style='font-size:1.5rem;font-weight:600;color:#111827;"
     f"margin:0 0 4px'>Monitoramento Laboratorial</h1>"
     f"<p style='font-size:0.85rem;color:#6B7280;margin:0 0 1.2rem'>"
-    f"Hospital Universitário · {titulo_periodo} · <b>{titulo_setor}</b></p>",
+    f"Hospital Unimed · {titulo_periodo} · <b>{titulo_setor}</b></p>",
     unsafe_allow_html=True,
 )
  
@@ -673,7 +673,7 @@ with col_f:
         long_pac["Rep_Dia2"] = (long_pac["Reps"]  / long_pac["Dias"]).round(2)
  
         # Forçar string com prefixo para evitar interpretação numérica pelo Plotly
-        atend_labels = ["Atend. " + str(a) for a in long_pac["Atendimento"].tolist()]
+        atend_labels = [str(a) for a in long_pac["Atendimento"].tolist()]
  
         fig_ld = go.Figure()
         fig_ld.add_trace(go.Bar(
@@ -909,7 +909,7 @@ st.plotly_chart(fig_mb, use_container_width=True)
 st.markdown(
     "<hr style='border:none;border-top:1px solid #E5E7EB;margin:2rem 0 0.8rem'>"
     "<p style='font-size:0.72rem;color:#9CA3AF;text-align:center'>"
-    "Lab Monitor · Hospital Universitário · Dados: SIGH/HU · Referência de custos: SIGTAP/SUS"
+    "Lab Monitor · Hospital Unimed · Dados: MVPep · Referência de custos: Contrato Pardini"
     "</p>",
     unsafe_allow_html=True,
 )
