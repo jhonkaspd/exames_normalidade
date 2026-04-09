@@ -116,9 +116,55 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
     padding-bottom: 6px; border-bottom: 1px solid #E5E7EB;
 }
  
-/* Esconder menu e rodapé do Streamlit */
-#MainMenu, footer, header { visibility: hidden; }
-</style>
+/* Esconder menu e rodapé do Streamlit, mas preservar o botão de toggle */
+#MainMenu { visibility: hidden; }
+footer    { visibility: hidden; }
+ 
+/* Oculta apenas o conteúdo interno do header (título, menu hamburguer)
+   sem esconder o header inteiro — o botão de toggle vive nele */
+header [data-testid="stToolbar"]         { visibility: hidden !important; }
+header [data-testid="stDecoration"]      { display: none !important; }
+header [data-testid="stStatusWidget"]    { visibility: hidden !important; }
+ 
+/* Força o header a não ter altura própria (ficará transparente/invisível
+   mas o botão de toggle continua renderizando dentro dele) */
+header {
+    background: transparent !important;
+    height: auto !important;
+}
+ 
+/* ── Botão de toggle (dentro do header) ─────────────────────────────
+   Cobre os seletores do botão tanto quando a sidebar está aberta
+   (stSidebarCollapsedControl) quanto quando está fechada (collapsedControl) */
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapsedControl"] {
+    display:       flex       !important;
+    visibility:    visible    !important;
+    opacity:       1          !important;
+    position:      fixed      !important;
+    top:           0.6rem     !important;
+    left:          0.5rem     !important;
+    z-index:       1000000    !important;
+    background:    #0D1B2A   !important;
+    border:        1px solid #1E3A5F !important;
+    border-radius: 8px        !important;
+    padding:       6px 8px    !important;
+    box-shadow:    0 2px 8px rgba(0,0,0,0.40) !important;
+    transition:    background 0.15s, box-shadow 0.15s !important;
+    cursor:        pointer    !important;
+}
+[data-testid="collapsedControl"]:hover,
+[data-testid="stSidebarCollapsedControl"]:hover {
+    background:  #1E3A5F !important;
+    box-shadow:  0 4px 14px rgba(0,0,0,0.55) !important;
+}
+[data-testid="collapsedControl"] svg,
+[data-testid="stSidebarCollapsedControl"] svg {
+    fill:    #C8D8E8 !important;
+    stroke:  #C8D8E8 !important;
+    width:   18px   !important;
+    height:  18px   !important;
+}
 """, unsafe_allow_html=True)
  
 # ─────────────────────────────────────────────────────────────────────
