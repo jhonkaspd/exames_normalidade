@@ -251,8 +251,8 @@ with st.sidebar:
         f"Dados disponíveis:<br>"
         f"<b>{data_min_disp.strftime('%d/%m/%Y')}</b> → "
         f"<b>{data_max_disp.strftime('%d/%m/%Y')}</b><br><br>"
-        f"Fonte: SIGH / HU<br>"
-        f"Custo: SIGTAP/SUS ref."
+        f"Fonte: MVPep <br>"
+        f"Custo: Contrato Pardini ref."
         f"</div>",
         unsafe_allow_html=True,
     )
