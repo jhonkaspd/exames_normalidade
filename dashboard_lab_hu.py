@@ -60,6 +60,36 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 [data-testid="stSidebar"] h2,
 [data-testid="stSidebar"] h3 { color: #E8F0F8 !important; }
  
+/* ── Botão de toggle da sidebar ──────────────────────────────────────
+   Garante que o botão seja sempre visível, mesmo quando a sidebar
+   está recolhida. O Streamlit usa data-testid="collapsedControl"
+   para o botão que reabre a sidebar.                                  */
+[data-testid="collapsedControl"] {
+    display:          flex  !important;
+    visibility:       visible !important;
+    opacity:          1     !important;
+    position:         fixed  !important;
+    top:              1rem   !important;
+    left:             0.6rem !important;
+    z-index:          999999 !important;
+    background:       #0D1B2A !important;
+    border:           1px solid #1E3A5F !important;
+    border-radius:    8px    !important;
+    padding:          6px 8px !important;
+    box-shadow:       0 2px 8px rgba(0,0,0,0.35) !important;
+    transition:       background 0.15s, box-shadow 0.15s !important;
+}
+[data-testid="collapsedControl"]:hover {
+    background:   #1E3A5F !important;
+    box-shadow:   0 4px 14px rgba(0,0,0,0.50) !important;
+}
+[data-testid="collapsedControl"] svg {
+    fill:         #C8D8E8 !important;
+    stroke:       #C8D8E8 !important;
+    width:        18px    !important;
+    height:       18px    !important;
+}
+ 
 /* KPI Cards */
 .kpi-card {
     background: #FFFFFF;
@@ -378,8 +408,8 @@ with c3:
         C["rep"]), unsafe_allow_html=True)
 with c4:
     st.markdown(kpi_card(
-        fmt_rs_br(custo_m), "Custo/Mês das Repetições",
-        f"Projeção anual: {fmt_rs_br(custo_a)}",
+        fmt_rs_br(custo_m, 2), "Custo/Mês das Repetições",
+        f"Projeção anual: {fmt_rs_br(custo_a, 2)}",
         C["critico"]), unsafe_allow_html=True)
  
 # ─────────────────────────────────────────────────────────────────────
