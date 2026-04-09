@@ -132,8 +132,15 @@ def carregar_dados(path: str = "dados_lab_hu.xlsx"):
     dim = pd.read_excel(path, sheet_name="dim_exames")
  
     # Padronização
-    for col in ["Interpretação", "Descrição Exame", "Setor Solicitante"]:
+    colunas_texto = ["Interpretação", "Descrição Exame", "Setor Solicitante"]
+    if "Unidade" in df.columns:
+        colunas_texto.append("Unidade")
+    for col in colunas_texto:
         df[col] = df[col].astype(str).str.strip().str.upper()
+ 
+    # Garantir coluna Unidade mesmo que ausente (compatibilidade retroativa)
+    if "Unidade" not in df.columns:
+        df["Unidade"] = "NÃO INFORMADA"
     dim["Descrição Exame"] = dim["Descrição Exame"].astype(str).str.strip().str.upper()
  
     df["DataHoraPedido"] = pd.to_datetime(df["DataHoraPedido"])
@@ -237,12 +244,35 @@ with st.sidebar:
  
     st.markdown("---")
  
-    # ── Filtro de setor ───────────────────────────────────────────────
-    setores = sorted(df_raw["Setor Solicitante"].unique())
+    # ── Filtro de Unidade ─────────────────────────────────────────────
+    unidades_disp = sorted(df_raw["Unidade"].dropna().unique())
+    unidade_sel = st.selectbox(
+        "Unidade",
+        options=["— Todas as unidades —"] + unidades_disp,
+        index=0,
+        help="Selecione uma unidade para restringir os setores disponíveis abaixo.",
+    )
+ 
+    # ── Filtragem cruzada: Setor restrito à Unidade selecionada ───────
+    if unidade_sel != "— Todas as unidades —":
+        setores_disponiveis = sorted(
+            df_raw[df_raw["Unidade"] == unidade_sel]["Setor Solicitante"].unique()
+        )
+        # Exibir badge informativo da quantidade de setores disponíveis
+        st.markdown(
+            f"<div style='font-size:0.70rem;color:#4B8AB5;margin:-4px 0 6px;'>"
+            f"↳ {len(setores_disponiveis)} setor(es) nesta unidade</div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        setores_disponiveis = sorted(df_raw["Setor Solicitante"].unique())
+ 
     setor_sel = st.selectbox(
         "Setor Solicitante",
-        options=["— Todos os setores —"] + setores,
+        options=["— Todos os setores —"] + setores_disponiveis,
         index=0,
+        help="Lista restrita à unidade selecionada acima." if unidade_sel != "— Todas as unidades —"
+             else "Selecione uma unidade acima para filtrar os setores.",
     )
  
     st.markdown("---")
@@ -251,29 +281,36 @@ with st.sidebar:
         f"Dados disponíveis:<br>"
         f"<b>{data_min_disp.strftime('%d/%m/%Y')}</b> → "
         f"<b>{data_max_disp.strftime('%d/%m/%Y')}</b><br><br>"
-        f"Fonte: MVPep <br>"
+        f"Fonte: MVPep<br>"
         f"Custo: Contrato Pardini ref."
         f"</div>",
         unsafe_allow_html=True,
     )
  
 # ─────────────────────────────────────────────────────────────────────
-# FILTRO DE DADOS — período + setor
+# FILTRO DE DADOS — período + unidade + setor (encadeados)
 # ─────────────────────────────────────────────────────────────────────
 import datetime
  
+# 1. Filtro de período
 df = df_raw[
     (df_raw["DataHoraPedido"].dt.date >= data_inicio) &
     (df_raw["DataHoraPedido"].dt.date <= data_fim)
 ].copy()
  
+# 2. Filtro de Unidade (independente do setor)
+if unidade_sel != "— Todas as unidades —":
+    df = df[df["Unidade"] == unidade_sel].copy()
+ 
+# 3. Filtro de Setor (restrito ao subconjunto já filtrado pela Unidade)
 if setor_sel != "— Todos os setores —":
     df = df[df["Setor Solicitante"] == setor_sel].copy()
-    titulo_setor = setor_sel.title()
-else:
-    titulo_setor = "Todos os setores"
  
-# Rótulo do período selecionado para o cabeçalho
+# Rótulos para cabeçalho e subtítulo
+titulo_setor = setor_sel.title() if setor_sel != "— Todos os setores —" else (
+    f"{unidade_sel.title()}" if unidade_sel != "— Todas as unidades —" else "Todos os setores"
+)
+ 
 if data_inicio == data_fim:
     titulo_periodo = data_inicio.strftime("%d/%m/%Y")
 else:
@@ -288,7 +325,7 @@ st.markdown(
     f"<h1 style='font-size:1.5rem;font-weight:600;color:#111827;"
     f"margin:0 0 4px'>Monitoramento Laboratorial</h1>"
     f"<p style='font-size:0.85rem;color:#6B7280;margin:0 0 1.2rem'>"
-    f"Hospital Unimed · {titulo_periodo} · <b>{titulo_setor}</b></p>",
+    f"Unimed Fortaleza · {titulo_periodo} · <b>{titulo_setor}</b></p>",
     unsafe_allow_html=True,
 )
  
@@ -673,7 +710,7 @@ with col_f:
         long_pac["Rep_Dia2"] = (long_pac["Reps"]  / long_pac["Dias"]).round(2)
  
         # Forçar string com prefixo para evitar interpretação numérica pelo Plotly
-        atend_labels = [str(a) for a in long_pac["Atendimento"].tolist()]
+        atend_labels = ["Atend. " + str(a) for a in long_pac["Atendimento"].tolist()]
  
         fig_ld = go.Figure()
         fig_ld.add_trace(go.Bar(
@@ -909,7 +946,7 @@ st.plotly_chart(fig_mb, use_container_width=True)
 st.markdown(
     "<hr style='border:none;border-top:1px solid #E5E7EB;margin:2rem 0 0.8rem'>"
     "<p style='font-size:0.72rem;color:#9CA3AF;text-align:center'>"
-    "Lab Monitor · Hospital Unimed · Dados: MVPep · Referência de custos: Contrato Pardini"
+    "Lab Monitor · Unimed Fortaleza · Dados: MVPep · Referência de custos: Contrato Pardini"
     "</p>",
     unsafe_allow_html=True,
 )
