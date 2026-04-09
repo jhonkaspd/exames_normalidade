@@ -201,8 +201,44 @@ with st.sidebar:
     st.markdown("---")
  
     df_raw = carregar_dados()
-    setores = sorted(df_raw["Setor Solicitante"].unique())
  
+    # ── Limites do período disponível nos dados ───────────────────────
+    data_min_disp = df_raw["DataHoraPedido"].dt.date.min()
+    data_max_disp = df_raw["DataHoraPedido"].dt.date.max()
+ 
+    st.markdown(
+        "<div style='font-size:0.75rem;font-weight:600;color:#C8D8E8;"
+        "text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px'>"
+        "Período</div>",
+        unsafe_allow_html=True,
+    )
+ 
+    data_inicio = st.date_input(
+        "Data inicial",
+        value=data_min_disp,
+        min_value=data_min_disp,
+        max_value=data_max_disp,
+        format="DD/MM/YYYY",
+        key="data_inicio",
+    )
+    data_fim = st.date_input(
+        "Data final",
+        value=data_max_disp,
+        min_value=data_min_disp,
+        max_value=data_max_disp,
+        format="DD/MM/YYYY",
+        key="data_fim",
+    )
+ 
+    # Validação: data início não pode ser posterior à data fim
+    if data_inicio > data_fim:
+        st.error("⚠️ A data inicial deve ser anterior ou igual à data final.")
+        data_inicio = data_fim
+ 
+    st.markdown("---")
+ 
+    # ── Filtro de setor ───────────────────────────────────────────────
+    setores = sorted(df_raw["Setor Solicitante"].unique())
     setor_sel = st.selectbox(
         "Setor Solicitante",
         options=["— Todos os setores —"] + setores,
@@ -211,23 +247,39 @@ with st.sidebar:
  
     st.markdown("---")
     st.markdown(
-        "<div style='font-size:0.72rem;color:#4B6A8A;line-height:1.6'>"
-        "Período analisado:<br><b>Março · 2026</b><br><br>"
-        "Fonte: SIGH / HU<br>"
-        "Custo: SIGTAP/SUS ref."
-        "</div>",
+        f"<div style='font-size:0.72rem;color:#4B6A8A;line-height:1.8'>"
+        f"Dados disponíveis:<br>"
+        f"<b>{data_min_disp.strftime('%d/%m/%Y')}</b> → "
+        f"<b>{data_max_disp.strftime('%d/%m/%Y')}</b><br><br>"
+        f"Fonte: SIGH / HU<br>"
+        f"Custo: SIGTAP/SUS ref."
+        f"</div>",
         unsafe_allow_html=True,
     )
  
 # ─────────────────────────────────────────────────────────────────────
-# FILTRO DE DADOS
+# FILTRO DE DADOS — período + setor
 # ─────────────────────────────────────────────────────────────────────
-if setor_sel == "— Todos os setores —":
-    df = df_raw.copy()
-    titulo_setor = "Todos os setores"
-else:
-    df = df_raw[df_raw["Setor Solicitante"] == setor_sel].copy()
+import datetime
+ 
+df = df_raw[
+    (df_raw["DataHoraPedido"].dt.date >= data_inicio) &
+    (df_raw["DataHoraPedido"].dt.date <= data_fim)
+].copy()
+ 
+if setor_sel != "— Todos os setores —":
+    df = df[df["Setor Solicitante"] == setor_sel].copy()
     titulo_setor = setor_sel.title()
+else:
+    titulo_setor = "Todos os setores"
+ 
+# Rótulo do período selecionado para o cabeçalho
+if data_inicio == data_fim:
+    titulo_periodo = data_inicio.strftime("%d/%m/%Y")
+else:
+    titulo_periodo = (
+        f"{data_inicio.strftime('%d/%m/%Y')} → {data_fim.strftime('%d/%m/%Y')}"
+    )
  
 # ─────────────────────────────────────────────────────────────────────
 # CABEÇALHO
@@ -236,7 +288,7 @@ st.markdown(
     f"<h1 style='font-size:1.5rem;font-weight:600;color:#111827;"
     f"margin:0 0 4px'>Monitoramento Laboratorial</h1>"
     f"<p style='font-size:0.85rem;color:#6B7280;margin:0 0 1.2rem'>"
-    f"Hospital Universitário · Março 2026 · <b>{titulo_setor}</b></p>",
+    f"Hospital Universitário · {titulo_periodo} · <b>{titulo_setor}</b></p>",
     unsafe_allow_html=True,
 )
  
@@ -619,24 +671,24 @@ with col_f:
         long_pac = long_pac.copy()
         long_pac["Ex_Dia"]   = (long_pac["Total"] / long_pac["Dias"]).round(1)
         long_pac["Rep_Dia2"] = (long_pac["Reps"]  / long_pac["Dias"]).round(2)
-        atend_labels = long_pac["Atendimento"].astype(str).tolist()
+ 
+        # Forçar string com prefixo para evitar interpretação numérica pelo Plotly
+        atend_labels = ["Atend. " + str(a) for a in long_pac["Atendimento"].tolist()]
  
         fig_ld = go.Figure()
         fig_ld.add_trace(go.Bar(
             x=atend_labels,
             y=long_pac["Ex_Dia"],
             name="Exames / dia",
-            marker=dict(color=C["azul"], opacity=0.85, line=dict(width=0)),
-            width=0.45,
-            hovertemplate="Atendimento: <b>%{x}</b><br>Exames/dia: %{y:.1f}<extra></extra>",
+            marker=dict(color=C["azul"], opacity=0.90, line=dict(width=0)),
+            hovertemplate="<b>%{x}</b><br>Exames/dia: %{y:.1f}<extra></extra>",
         ))
         fig_ld.add_trace(go.Bar(
             x=atend_labels,
             y=long_pac["Rep_Dia2"],
             name="Repetições / dia",
             marker=dict(color=C["rep"], opacity=0.95, line=dict(width=0)),
-            width=0.45,
-            hovertemplate="Atendimento: <b>%{x}</b><br>Rep./dia: %{y:.2f}<extra></extra>",
+            hovertemplate="<b>%{x}</b><br>Repetições/dia: %{y:.2f}<extra></extra>",
         ))
         fig_ld.update_layout(**layout_plotly(
             title=dict(
@@ -644,24 +696,29 @@ with col_f:
                 font_size=13, x=0,
             ),
             barmode="group",
-            bargap=0.20,
-            bargroupgap=0.06,
+            bargap=0.25,
+            bargroupgap=0.08,
             xaxis=dict(
+                type="category",          # garante eixo discreto — barras largas
                 title="Código de Atendimento",
-                tickangle=0,
-                tickfont=dict(size=10),
+                tickangle=-40,
+                tickfont=dict(size=9),
                 showgrid=False,
+                categoryorder="array",
+                categoryarray=atend_labels,
             ),
             yaxis=dict(
                 title="Média por dia de internação",
                 showgrid=True,
                 gridcolor="#F3F4F6",
+                rangemode="tozero",
             ),
             legend=dict(
                 orientation="h", x=0.5, xanchor="center",
-                y=1.08, bgcolor="rgba(0,0,0,0)", font_size=11,
+                y=1.06, bgcolor="rgba(0,0,0,0)", font_size=11,
             ),
-            height=400,
+            margin=dict(l=0, r=0, t=48, b=60),
+            height=420,
         ))
         st.plotly_chart(fig_ld, use_container_width=True)
     else:
