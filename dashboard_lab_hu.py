@@ -186,6 +186,10 @@ def kpi_card(valor, label, sub, cor, prefixo="", sufixo=""):
       <div class="kpi-sub">{sub}</div>
     </div>"""
  
+def layout_plotly(**extra):
+    cfg = {**PLOTLY_BASE, **extra}
+    return cfg
+ 
 def fmt_br(valor, decimais=0):
     """Formata número no padrão brasileiro: milhar=. e decimal=,"""
     if decimais == 0:
