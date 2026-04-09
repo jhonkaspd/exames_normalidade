@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════════════╗
-║  DASHBOARD — MONITORAMENTO LABORATORIAL HU                           ║
+║  DASHBOARD — MONITORAMENTO LABORATORIAL                           ║
 ║  App Streamlit completo com filtro por setor                         ║
 ║                                                                      ║
 ║  EXECUÇÃO LOCAL:                                                     ║
@@ -186,7 +186,22 @@ def kpi_card(valor, label, sub, cor, prefixo="", sufixo=""):
       <div class="kpi-sub">{sub}</div>
     </div>"""
  
-def layout_plotly(**extra):
+def fmt_br(valor, decimais=0):
+    """Formata número no padrão brasileiro: milhar=. e decimal=,"""
+    if decimais == 0:
+        s = f"{valor:,.0f}"
+    else:
+        s = f"{valor:,.{decimais}f}"
+    # Troca separadores: , → X temporário → . → ,
+    return s.replace(",", "X").replace(".", ",").replace("X", ".")
+ 
+def fmt_pct_br(valor, decimais=1):
+    """Retorna string de percentual no padrão BR. Ex: 64,8%"""
+    return fmt_br(valor, decimais) + "%"
+ 
+def fmt_rs_br(valor, decimais=0):
+    """Retorna string monetária BR. Ex: R$ 12.669,86"""
+    return "R$ " + fmt_br(valor, decimais)
     cfg = {**PLOTLY_BASE, **extra}
     return cfg
  
@@ -343,21 +358,25 @@ taxa_r   = reps / total * 100    if total else 0
  
 c1, c2, c3, c4 = st.columns(4)
 with c1:
-    st.markdown(kpi_card(f"{total:,}", "Total de Exames",
-                f"{df['Atendimento'].nunique():,} pacientes · {df['Pedido'].nunique():,} pedidos",
-                C["azul"]), unsafe_allow_html=True)
+    st.markdown(kpi_card(
+        fmt_br(total), "Total de Exames",
+        f"{fmt_br(df['Atendimento'].nunique())} pacientes · {fmt_br(df['Pedido'].nunique())} pedidos",
+        C["azul"]), unsafe_allow_html=True)
 with c2:
-    st.markdown(kpi_card(f"{taxa_n:.1f}", "Taxa de Normalidade",
-                f"{normais:,} resultados normais",
-                C["normal"], sufixo="%"), unsafe_allow_html=True)
+    st.markdown(kpi_card(
+        fmt_pct_br(taxa_n), "Taxa de Normalidade",
+        f"{fmt_br(normais)} resultados normais",
+        C["normal"]), unsafe_allow_html=True)
 with c3:
-    st.markdown(kpi_card(f"{reps:,}", "Repetições Desnecessárias",
-                f"{taxa_r:.1f}% do total · {criticas:,} abaixo do intervalo clínico",
-                C["rep"]), unsafe_allow_html=True)
+    st.markdown(kpi_card(
+        fmt_br(reps), "Repetições Desnecessárias",
+        f"{fmt_pct_br(taxa_r)} do total · {fmt_br(criticas)} abaixo do intervalo clínico",
+        C["rep"]), unsafe_allow_html=True)
 with c4:
-    st.markdown(kpi_card(f"{custo_m:,.0f}", "Custo/Mês das Repetições",
-                f"Projeção anual: R$ {custo_a:,.0f}",
-                C["critico"], prefixo="R$ "), unsafe_allow_html=True)
+    st.markdown(kpi_card(
+        fmt_rs_br(custo_m), "Custo/Mês das Repetições",
+        f"Projeção anual: {fmt_rs_br(custo_a)}",
+        C["critico"]), unsafe_allow_html=True)
  
 # ─────────────────────────────────────────────────────────────────────
 # SEÇÃO 1 — NORMALIDADE
@@ -382,8 +401,8 @@ with col_a:
         marker_color=cores_e,
         text=[f"{v:.0f}%" for v in exame_norm["Pct"]],
         textposition="outside",
-        hovertemplate="%{y}<br>Normal: %{x:.1f}%<br>n=%{customdata:,}<extra></extra>",
-        customdata=exame_norm["Total"],
+        hovertemplate="%{y}<br>Normal: %{x:.1f}%<br>n=%{customdata}<extra></extra>",
+        customdata=[fmt_br(v) for v in exame_norm["Total"]],
     ))
     fig_e.add_vline(x=75, line_dash="dot", line_color="#9CA3AF", line_width=1)
     fig_e.update_layout(**layout_plotly(
@@ -501,24 +520,25 @@ with col_c:
         xaxis=dict(title=None, showgrid=True, gridcolor="#F3F4F6"),
         yaxis=dict(title=None, tickfont_size=10, showgrid=False),
         legend=dict(
-            orientation="h", x=0.5, y=-0.18, xanchor="center",
+            orientation="h", x=0.5, y=1.06, xanchor="center",
             bgcolor="rgba(0,0,0,0)", font_size=11,
         ),
-        annotations=[dict(
-            text=(
-                "<b>Críticas:</b> repetição Normal→Normal dentro do intervalo clínico mínimo do exame<br>"
-                "<b>Alerta/Atenção:</b> repetição Normal→Normal com intervalo acima do mínimo, mas ainda suspeita"
-            ),
-            xref="paper", yref="paper", x=0, y=-0.30,
-            xanchor="left", yanchor="top",
-            showarrow=False,
-            font=dict(size=10, color="#6B7280"),
-            align="left",
-        )],
-        margin=dict(l=0, r=0, t=36, b=90),
-        height=460,
+        margin=dict(l=0, r=0, t=36, b=10),
+        height=440,
     ))
     st.plotly_chart(fig_re, use_container_width=True)
+ 
+    # Legenda explicativa abaixo do gráfico (annotation Plotly não aparecia de forma consistente)
+    st.markdown(
+        "<div style='font-size:0.78rem;line-height:1.8;padding:10px 12px;"
+        "background:#F9FAFB;border-radius:8px;border:1px solid #E5E7EB;margin-top:-8px'>"
+        "<span style='color:#991B1B;font-weight:600'>● Críticas:</span>"
+        " <span style='color:#6B7280'>repetição Normal→Normal dentro do intervalo clínico mínimo do exame — risco de exame redundante imediato</span><br>"
+        "<span style='color:#F59E0B;font-weight:600'>● Alerta/Atenção:</span>"
+        " <span style='color:#6B7280'>repetição Normal→Normal com intervalo acima do mínimo, mas ainda suspeita de desnecessidade</span>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
  
 # ── Distribuição de intervalos (M02·C9) ───────────────────────────────
 with col_d:
@@ -573,9 +593,9 @@ fig_bo = go.Figure(go.Scatter(
     customdata=np.stack([setor_rep["Custo_Rep"], setor_rep["Total"]], axis=1),
     hovertemplate=(
         "<b>%{text}</b><br>"
-        "Repetições: %{x:,}<br>"
+        "Repetições: %{x:,.0f}<br>"
         "Taxa: %{y:.1f}%<br>"
-        "Custo: R$ %{customdata[0]:,.0f}<extra></extra>"
+        "Custo: R$ %{customdata[0]:,.2f}<extra></extra>"
     ),
 ))
 fig_bo.update_layout(**layout_plotly(
@@ -670,16 +690,17 @@ with col_e:
     fig_sc.add_hline(y=40, line_dash="dot", line_color="#EF4444", line_width=1,
                      annotation_text="40% normal", annotation_font_color="#EF4444")
  
-    # Descrição dos perfis como anotação na base do gráfico
-    desc_perfis = (
-        "<b>Alto desperdício:</b> ≥70% Normal e ≥1 rep./dia — solicitação rotineira sem revisão de resultado &nbsp;|&nbsp; "
-        "<b>Desperdício moderado:</b> ≥70% Normal com repetições, mas ritmo controlado &nbsp;|&nbsp; "
-        "<b>Misto:</b> perfil intermediário — normal e repetições coexistem &nbsp;|&nbsp; "
-        "<b>Crítico:</b> <40% Normal sem repetições — monitoramento clinicamente justificado &nbsp;|&nbsp; "
-        "<b>Monitoramento adequado:</b> ≥70% Normal sem repetições &nbsp;|&nbsp; "
-        "<b>Passagem rápida:</b> múltiplos exames no mesmo dia &nbsp;|&nbsp; "
-        "<b>Pontual:</b> único exame no atendimento"
-    )
+    # Descrição dos perfis — exibida como texto Streamlit abaixo do gráfico
+    # (annotation Plotly cortava o texto em janelas menores)
+    desc_perfis_linhas = [
+        ("Alto desperdício",     "≥70% Normal e ≥1 rep./dia — solicitação rotineira sem revisão de resultado"),
+        ("Desperdício moderado", "≥70% Normal com repetições, mas em ritmo controlado"),
+        ("Misto",                "Perfil intermediário — resultados normais e repetições coexistem"),
+        ("Crítico",              "<40% Normal sem repetições — monitoramento clinicamente justificado"),
+        ("Monitoramento adequado", "≥70% Normal sem nenhuma repetição desnecessária"),
+        ("Passagem rápida",      "Múltiplos exames solicitados no mesmo dia"),
+        ("Pontual",              "Único exame registrado no atendimento"),
+    ]
  
     fig_sc.update_layout(**layout_plotly(
         title=dict(text="Perfil da População — Normal × Dias de Internação", font_size=13, x=0),
@@ -687,18 +708,24 @@ with col_e:
         yaxis=dict(title="Taxa de normalidade (%)", ticksuffix="%",
                    showgrid=True, gridcolor="#F3F4F6"),
         legend=dict(orientation="h", x=0, y=1.06, bgcolor="rgba(0,0,0,0)", font_size=10),
-        annotations=[dict(
-            text=desc_perfis,
-            xref="paper", yref="paper", x=0, y=-0.22,
-            xanchor="left", yanchor="top",
-            showarrow=False,
-            font=dict(size=9, color="#6B7280"),
-            align="left",
-        )],
-        margin=dict(l=0, r=0, t=36, b=110),
-        height=480,
+        margin=dict(l=0, r=0, t=36, b=10),
+        height=420,
     ))
     st.plotly_chart(fig_sc, use_container_width=True)
+ 
+    # Legenda textual dos perfis abaixo do gráfico
+    linhas_html = "".join(
+        f"<span style='margin-right:4px'>●</span>"
+        f"<b style='color:#374151'>{nome}:</b> "
+        f"<span style='color:#6B7280'>{desc}</span><br>"
+        for nome, desc in desc_perfis_linhas
+    )
+    st.markdown(
+        f"<div style='font-size:0.78rem;line-height:1.8;padding:10px 12px;"
+        f"background:#F9FAFB;border-radius:8px;border:1px solid #E5E7EB;"
+        f"margin-top:-8px'>{linhas_html}</div>",
+        unsafe_allow_html=True,
+    )
  
 # ── Comparativo exames/dia top internações (M03·C11) ──────────────────
 with col_f:
@@ -849,7 +876,7 @@ with col_g:
               .sum().round(0).unstack().fillna(0))
  
     lab_sv = [s[:26]+"…" if len(s)>26 else s for s in piv_r.index]
-    annot  = [[f"{piv_r.values[i,j]:.0f}%\nR${piv_cu.values[i,j]:,.0f}"
+    annot  = [[f"{piv_r.values[i,j]:.0f}%\nR${fmt_br(piv_cu.values[i,j])}"
                if not np.isnan(piv_r.values[i,j]) else "—"
                for j in range(piv_r.shape[1])]
               for i in range(piv_r.shape[0])]
