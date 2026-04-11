@@ -1521,7 +1521,7 @@ with tab3:
 
     c5, c6 = st.columns([1.15, 0.85])
 
-        with c5:
+    with c5:
         fig = go.Figure()
         df_scatter = pac[pac["Dias_Internacao"] >= 1].copy()
 
@@ -1590,7 +1590,7 @@ with tab3:
             "<br><b>Misto:</b> perfil intermediário, sem padrão dominante claro."
         )
 
-            with c6:
+    with c6:
         longos = pac[(pac["Dias_Internacao"] >= 7) & (pac["Total"] >= 20)].copy()
         longos = longos.sort_values("Reps", ascending=False).head(12)
 
