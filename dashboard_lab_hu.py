@@ -1,3 +1,10 @@
+# dashboard_lab_hu.py
+# ============================================================
+# LAB VISION | HU
+# Monitoramento de Repetições Desnecessárias de Exames
+# Versão refinada — visual executivo / institucional Unimed
+# ============================================================
+
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -52,10 +59,6 @@ COLORS = {
 }
 
 DIAS_PT = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
-MESES_PT = {
-    1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr", 5: "Mai", 6: "Jun",
-    7: "Jul", 8: "Ago", 9: "Set", 10: "Out", 11: "Nov", 12: "Dez"
-}
 
 
 # ============================================================
@@ -114,19 +117,10 @@ def inject_css():
             color: white !important;
         }}
 
-        [data-testid="stSidebar"] .stDateInput {{
-            width: 100%;
-        }}
-
-        [data-testid="stSidebar"] .stDateInput > div {{
-            width: 100%;
-        }}
-
         [data-testid="stSidebar"] .stDateInput > div > div {{
             background-color: rgba(255,255,255,0.08) !important;
             border: 1px solid rgba(255,255,255,0.16) !important;
             border-radius: 14px;
-            min-height: 42px;
         }}
 
         #MainMenu, footer, header {{
@@ -349,15 +343,6 @@ def inject_css():
             border-top: 1px solid {COLORS["border"]};
         }}
 
-        .chart-title-center {{
-            text-align: center;
-            font-weight: 800;
-            color: {COLORS["deep"]};
-            margin-top: 0.25rem;
-            margin-bottom: 0.15rem;
-            font-size: 1rem;
-        }}
-
         div[data-testid="stMetric"] {{
             background: rgba(255,255,255,0.84);
             border: 1px solid {COLORS["border"]};
@@ -397,99 +382,125 @@ def inject_css():
 inject_css()
 
 
-
 # ============================================================
-# FUNÇÕES AUXILIARES DE FORMATAÇÃO E LAYOUT
+# FUNÇÕES AUXILIARES
 # ============================================================
-
-def format_int(valor):
-    """Inteiro no padrão BR: 1.234"""
-    try:
-        return f"{int(valor):,}".replace(",", ".")
-    except (TypeError, ValueError):
-        return "—"
+def format_int(v):
+    return f"{int(v):,}".replace(",", ".")
 
 
-def format_pct(valor, decimais=1):
-    """Percentual BR: 64,8%"""
-    try:
-        s = f"{float(valor):.{decimais}f}"
-        return s.replace(".", ",") + "%"
-    except (TypeError, ValueError):
-        return "—"
+def format_money(v):
+    return f"R$ {v:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
-def format_money(valor, decimais=2):
-    """Monetário BR: R$ 12.669,86"""
-    try:
-        s = f"{float(valor):,.{decimais}f}"
-        # vírgula → X, ponto → vírgula, X → ponto
-        s = s.replace(",", "X").replace(".", ",").replace("X", ".")
-        return f"R$ {s}"
-    except (TypeError, ValueError):
-        return "R$ —"
+def format_pct(v, nd=1):
+    return f"{v:.{nd}f}%".replace(".", ",")
 
 
-def plot_layout(title, height=400, **kwargs):
-    """Retorna dict de layout padrão para figuras Plotly."""
-    base = dict(
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="#FFFFFF",
-        font=dict(family="Inter, sans-serif", color=COLORS["text"], size=12),
-        margin=dict(l=4, r=4, t=44, b=4),
-        title=dict(
-            text=title,
-            font=dict(size=13, color=COLORS["text"], weight=600),
-            x=0,
-            pad=dict(l=0, b=8),
-        ),
-        hoverlabel=dict(
-            bgcolor=COLORS["surface_deep"],
-            font_color=COLORS["white"],
-            font_family="JetBrains Mono, monospace",
-            font_size=12,
-        ),
-        height=height,
+def truncate_text(text, n=30):
+    text = str(text)
+    return text if len(text) <= n else text[: n - 1] + "…"
+
+
+def section_header(title):
+    st.markdown(
+        f"""
+        <div class="section-title">
+            <span class="dot"></span>
+            <span class="text">{title}</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
+
+
+def info_note(text):
+    st.markdown(f"""<div class="info-note">{text}</div>""", unsafe_allow_html=True)
+
+
+def insight_card(title, text):
+    st.markdown(
+        f"""
+        <div class="insight-card">
+            <div class="insight-title">{title}</div>
+            <div class="insight-text">{text}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def kpi_card(label, value, sub, accent, icon="•", fill=0.7, accent_2=None):
+    accent_2 = accent_2 or COLORS["primary_light"]
+    accent_soft = f"{accent}22"
+    fill_pct = max(0, min(fill, 1)) * 100
+    return f"""
+    <div class="kpi-card" style="--accent:{accent}; --accent-2:{accent_2}; --accent-soft:{accent_soft}">
+        <div class="kpi-top">
+            <div class="kpi-label">{label}</div>
+            <div class="kpi-icon">{icon}</div>
+        </div>
+        <div class="kpi-value">{value}</div>
+        <div class="kpi-sub">{sub}</div>
+        <div class="kpi-bar">
+            <div class="kpi-fill" style="width:{fill_pct:.0f}%"></div>
+        </div>
+    </div>
+    """
+
+
+def plot_layout(title, height=380, legend=None, **kwargs):
+    base = dict(
+        title=dict(text=title, x=0, font=dict(size=15, color=COLORS["deep"])),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(255,255,255,0.76)",
+        font=dict(family="Inter, sans-serif", size=12, color=COLORS["text"]),
+        margin=dict(l=8, r=8, t=50, b=8),
+        height=height,
+        hoverlabel=dict(
+            bgcolor=COLORS["deep"],
+            font_color=COLORS["white"],
+            font_size=12,
+            font_family="Inter, sans-serif",
+        ),
+    )
+
+    if legend is None:
+        base["legend"] = dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="left",
+            x=0,
+            bgcolor="rgba(0,0,0,0)",
+        )
+    else:
+        base["legend"] = legend
+
     base.update(kwargs)
     return base
 
 
-def kpi_card(label, value, subtitle="", color=None, icon="", fill=0, accent_2=None):
-    """Renderiza um card KPI via st.markdown."""
-    border_color = color or COLORS["primary"]
-    bg = border_color if fill else COLORS["surface"]
-    text_color = COLORS["white"] if fill else border_color
-    sub_color = COLORS["white"] if fill else COLORS["muted"]
-    border_style = f"border-left: 4px solid {border_color};"
-    if fill:
-        border_style = ""
-    html = f"""
-    <div style="background:{bg};border-radius:12px;padding:18px 22px;
-                {border_style}
-                box-shadow:0 1px 4px rgba(0,0,0,0.07);min-height:90px;">
-      <div style="font-size:0.72rem;font-weight:600;text-transform:uppercase;
-                  letter-spacing:0.07em;color:{sub_color};margin-bottom:4px;">
-        {icon} {label}
-      </div>
-      <div style="font-size:1.9rem;font-weight:700;color:{text_color};
-                  font-family:'JetBrains Mono',monospace;line-height:1.1;margin-bottom:4px;">
-        {value}
-      </div>
-      <div style="font-size:0.75rem;color:{sub_color};opacity:0.85;">{subtitle}</div>
-    </div>"""
-    st.markdown(html, unsafe_allow_html=True)
+def color_scale(value, vmin=0, vmax=100):
+    import matplotlib.colors as mcolors
+    import matplotlib as mpl
 
-
-def info_note(text):
-    """Renderiza uma nota informativa abaixo de um gráfico."""
-    st.markdown(
-        f"""<div style="font-size:0.78rem;line-height:1.75;padding:10px 14px;
-            background:{COLORS['surface_soft']};border-radius:8px;
-            border:1px solid {COLORS['border']};margin-top:-6px;
-            color:{COLORS['muted']};">{text}</div>""",
-        unsafe_allow_html=True,
+    cmap = mpl.colors.LinearSegmentedColormap.from_list(
+        "unimed_scale",
+        [COLORS["primary"], COLORS["primary_light"], COLORS["alert"], COLORS["danger_dark"]],
     )
+    norm = mcolors.Normalize(vmin=vmin, vmax=max(vmax, vmin + 1e-9))
+    rgba = cmap(norm(value))
+    return mcolors.to_hex(rgba)
+
+
+def color_scale_list(values, vmin=0, vmax=100):
+    values = list(values)
+    if len(values) == 0:
+        return []
+    vmax = vmax if vmax is not None else max(values)
+    return [color_scale(v, vmin=vmin, vmax=vmax) for v in values]
+
 
 # ============================================================
 # DADOS
@@ -550,6 +561,8 @@ def carregar_dados(path="dados_lab_hu.xlsx"):
     df["Custo_Rep"] = df["Custo_Unit"] * df["Flag_Rep"]
 
     return df
+
+
 # ============================================================
 # SIDEBAR
 # ============================================================
@@ -571,6 +584,7 @@ with st.sidebar:
     data_min = pd.to_datetime(df_raw["DataHoraPedido"]).min().date()
     data_max = pd.to_datetime(df_raw["DataHoraPedido"]).max().date()
 
+    # filtro cruzado
     unidades_all = sorted(df_raw["Unidade"].dropna().unique().tolist()) if "Unidade" in df_raw.columns else []
     unidade_sel = st.selectbox(
         "Unidade",
@@ -592,30 +606,19 @@ with st.sidebar:
     )
 
     st.markdown("<div style='height:0.35rem'></div>", unsafe_allow_html=True)
-    st.markdown("**Período**")
 
-    col_dt1, col_dt2 = st.columns(2)
-    with col_dt1:
-        periodo_inicio_sel = st.date_input(
-            "Início",
-            value=data_min,
-            min_value=data_min,
-            max_value=data_max,
-            format="DD/MM/YYYY",
-            key="periodo_inicio_sidebar",
-        )
-    with col_dt2:
-        periodo_fim_sel = st.date_input(
-            "Fim",
-            value=data_max,
-            min_value=data_min,
-            max_value=data_max,
-            format="DD/MM/YYYY",
-            key="periodo_fim_sidebar",
-        )
+    periodo_sel = st.date_input(
+        "Período",
+        value=(data_min, data_max),
+        min_value=data_min,
+        max_value=data_max,
+        format="DD/MM/YYYY",
+    )
 
-    if periodo_inicio_sel > periodo_fim_sel:
-        st.warning("A data inicial não pode ser maior que a data final.")
+    if isinstance(periodo_sel, tuple) and len(periodo_sel) == 2:
+        periodo_inicio_sel, periodo_fim_sel = periodo_sel
+    else:
+        periodo_inicio_sel, periodo_fim_sel = data_min, data_max
 
     st.markdown("---")
     st.markdown(
@@ -684,6 +687,7 @@ custo_rep_ano = custo_rep_mes * 12
 
 periodo_inicio = pd.to_datetime(df["DataHoraPedido"]).min()
 periodo_fim = pd.to_datetime(df["DataHoraPedido"]).max()
+
 
 # ============================================================
 # HERO
@@ -827,6 +831,7 @@ tab1, tab2, tab3, tab4 = st.tabs(
     ["Visão geral", "Repetições", "Jornada do paciente", "Mapa integrado"]
 )
 
+
 # ============================================================
 # TAB 1 — VISÃO GERAL
 # ============================================================
@@ -962,7 +967,8 @@ with tab1:
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # ============================================================
+
+# ============================================================
 # TAB 2 — REPETIÇÕES
 # ============================================================
 with tab2:
@@ -1100,7 +1106,8 @@ with tab2:
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # ============================================================
+
+# ============================================================
 # TAB 3 — JORNADA
 # ============================================================
 with tab3:
@@ -1123,9 +1130,7 @@ with tab3:
     )
 
     pac["Pct_Normal"] = (pac["Pct_Normal"] * 100).round(1)
-    pac["Dias_Internacao"] = (
-        (pac["Ultimo"] - pac["Primeiro"]).dt.total_seconds() / 86400
-    ).clip(lower=0).round(1)
+    pac["Dias_Internacao"] = ((pac["Ultimo"] - pac["Primeiro"]).dt.total_seconds() / 86400).clip(lower=0).round(1)
     pac["Reps_Dia"] = (pac["Reps"] / pac["Dias_Internacao"].replace(0, 0.5)).round(2)
 
     def classificar_perfil(row):
@@ -1174,10 +1179,7 @@ with tab3:
                         opacity=0.75,
                         line=dict(color="white", width=0.9),
                     ),
-                    customdata=np.stack(
-                        [grupo["Atendimento"], grupo["Reps"], grupo["Custo_Rep"]],
-                        axis=1,
-                    ),
+                    customdata=np.stack([grupo["Atendimento"], grupo["Reps"], grupo["Custo_Rep"]], axis=1),
                     hovertemplate=(
                         "Atendimento: %{customdata[0]}<br>"
                         "Dias: %{x:.1f}<br>"
@@ -1195,24 +1197,10 @@ with tab3:
             **plot_layout(
                 "Perfil da população internada",
                 height=420,
-                legend=dict(
-                    orientation="v",
-                    x=1.01,
-                    y=0.5,
-                    bgcolor="rgba(0,0,0,0)",
-                ),
+                legend=dict(orientation="v", x=1.01, y=0.5, bgcolor="rgba(0,0,0,0)"),
             ),
-            xaxis=dict(
-                title="Dias de internação",
-                showgrid=True,
-                gridcolor=COLORS["grid"],
-            ),
-            yaxis=dict(
-                title="Taxa de normalidade (%)",
-                ticksuffix="%",
-                showgrid=True,
-                gridcolor=COLORS["grid"],
-            ),
+            xaxis=dict(title="Dias de internação", showgrid=True, gridcolor=COLORS["grid"]),
+            yaxis=dict(title="Taxa de normalidade (%)", ticksuffix="%", showgrid=True, gridcolor=COLORS["grid"]),
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -1259,54 +1247,31 @@ with tab3:
                 )
             )
             fig.update_layout(
-                **plot_layout(
-                    "Internações longas · intensidade assistencial × desperdício",
-                    height=430,
-                ),
-                xaxis=dict(
-                    title="Atendimento",
-                    type="category",
-                    tickangle=-35,
-                    showgrid=False,
-                ),
-                yaxis=dict(
-                    title="Frequência diária",
-                    showgrid=True,
-                    gridcolor=COLORS["grid"],
-                ),
+                **plot_layout("Internações longas · intensidade assistencial × desperdício", height=430),
+                xaxis=dict(title="Atendimento", type="category", tickangle=-35, showgrid=False),
+                yaxis=dict(title="Frequência diária", showgrid=True, gridcolor=COLORS["grid"]),
             )
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Sem internações com pelo menos 7 dias e 20 exames no filtro atual.")
 
     with st.expander("🔎 Buscar linha do tempo de um paciente", expanded=False):
-        atendimento_input = st.text_input(
-            "Código do atendimento",
-            placeholder="Ex: 12335722"
-        )
+        atendimento_input = st.text_input("Código do atendimento", placeholder="Ex: 12335722")
 
         if atendimento_input:
-            atendimento_input = atendimento_input.strip()
-
-            if not atendimento_input.isdigit():
-                st.error("Digite apenas números no código do atendimento.")
-            else:
-                atendimento_id = int(atendimento_input)
-
+            try:
+                atendimento_id = int(atendimento_input.strip())
                 p = df[df["Atendimento"] == atendimento_id].sort_values("DataHoraPedido").copy()
 
                 if p.empty:
                     st.warning("Atendimento não encontrado dentro do filtro selecionado.")
                 else:
                     info = pac[pac["Atendimento"] == atendimento_id].iloc[0]
-                    dias_int = float(info["Dias_Internacao"]) if pd.notna(info["Dias_Internacao"]) else 0.0
-
-                    m1, m2, m3, m4, m5 = st.columns(5)
+                    m1, m2, m3, m4 = st.columns(4)
                     m1.metric("Exames", format_int(info["Total"]))
                     m2.metric("% normal", format_pct(info["Pct_Normal"]))
                     m3.metric("Repetições", format_int(info["Reps"]))
                     m4.metric("Custo repetição", f'R$ {info["Custo_Rep"]:.2f}'.replace(".", ","))
-                    m5.metric("Dias de internação", f"{dias_int:.1f}".replace(".", ","))
 
                     ordem = (
                         p.groupby("Descrição Exame")["DataHoraPedido"]
@@ -1315,99 +1280,161 @@ with tab3:
                         .index
                         .tolist()
                     )
+                    mapa_y = {ex: i for i, ex in enumerate(ordem)}
+                    p["y_pos"] = p["Descrição Exame"].map(mapa_y)
 
-                    if not ordem:
-                        st.warning("Não há exames suficientes para montar a linha do tempo.")
-                    else:
-                        mapa_y = {ex: i for i, ex in enumerate(ordem)}
-                        p["y_pos"] = p["Descrição Exame"].map(mapa_y)
+                    fig = go.Figure()
 
-                        resumo_exame = (
-                            p.groupby("Descrição Exame")
-                            .agg(
-                                Total_Exames=("Descrição Exame", "count"),
-                                Pct_Normal=("Flag_Normal", "mean"),
+                    for ex in ordem:
+                        sub = p[p["Descrição Exame"] == ex].sort_values("DataHoraPedido")
+                        if len(sub) > 1:
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=sub["DataHoraPedido"],
+                                    y=[mapa_y[ex]] * len(sub),
+                                    mode="lines",
+                                    line=dict(color="#DDE8E2", width=1.5),
+                                    hoverinfo="skip",
+                                    showlegend=False,
+                                )
                             )
-                            .reindex(ordem)
-                            .reset_index()
+
+                    normais_sub = p[p["Interpretação"] == "NORMAL"]
+                    alterados_sub = p[p["Interpretação"] != "NORMAL"]
+                    repetidos_sub = p[p["Flag_Rep"] == 1]
+
+                    if not normais_sub.empty:
+                        fig.add_trace(
+                            go.Scatter(
+                                x=normais_sub["DataHoraPedido"],
+                                y=normais_sub["y_pos"],
+                                mode="markers",
+                                name="Normal",
+                                marker=dict(size=10, color=COLORS["primary"], line=dict(color="white", width=1.4)),
+                                customdata=[x.title() for x in normais_sub["Descrição Exame"]],
+                                hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
+                            )
                         )
 
-                        resumo_exame["Total_Exames"] = resumo_exame["Total_Exames"].fillna(0)
-                        resumo_exame["Pct_Normal"] = (
-                            resumo_exame["Pct_Normal"].fillna(0) * 100
-                        ).round(0)
-
-                        resumo_exame["Resumo"] = resumo_exame.apply(
-                            lambda r: f"{int(r['Total_Exames'])} | {int(r['Pct_Normal'])}%",
-                            axis=1
+                    if not alterados_sub.empty:
+                        fig.add_trace(
+                            go.Scatter(
+                                x=alterados_sub["DataHoraPedido"],
+                                y=alterados_sub["y_pos"],
+                                mode="markers",
+                                name="Alterado",
+                                marker=dict(size=10, color=COLORS["deep"], line=dict(color="white", width=1.4)),
+                                customdata=[x.title() for x in alterados_sub["Descrição Exame"]],
+                                hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
+                            )
                         )
 
-                        tickvals_y = list(range(len(ordem)))
-                        ticktext_y_left = [e.title() for e in ordem]
-                        ticktext_y_right = resumo_exame["Resumo"].tolist()
-
-                        x_min = pd.to_datetime(p["DataHoraPedido"].min())
-                        x_max = pd.to_datetime(p["DataHoraPedido"].max())
-                        tickvals_x, ticktext_x = build_pt_ticks(x_min, x_max)
-
-                        st.markdown(
-                            f"""<div class="chart-title-center">Linha do tempo · atendimento {atendimento_id}</div>""",
-                            unsafe_allow_html=True,
+                    if not repetidos_sub.empty:
+                        fig.add_trace(
+                            go.Scatter(
+                                x=repetidos_sub["DataHoraPedido"],
+                                y=repetidos_sub["y_pos"],
+                                mode="markers",
+                                name="Repetição",
+                                marker=dict(size=18, color="rgba(0,0,0,0)", line=dict(color=COLORS["alert"], width=2.7)),
+                                customdata=[x.title() for x in repetidos_sub["Descrição Exame"]],
+                                hovertemplate="Repetição<br>%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
+                            )
                         )
 
-                        fig = go.Figure()
+                    fig.update_layout(
+                        **plot_layout(f"Linha do tempo · atendimento {atendimento_id}", height=max(300, len(ordem) * 28 + 110)),
+                        xaxis=dict(showgrid=True, gridcolor=COLORS["grid"], title=None),
+                        yaxis=dict(
+                            title=None,
+                            tickvals=list(range(len(ordem))),
+                            ticktext=[x.title() for x in ordem],
+                            showgrid=False,
+                        ),
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
 
-                        fig.update_layout(
-                            paper_bgcolor="rgba(0,0,0,0)",
-                            plot_bgcolor="rgba(255,255,255,0.76)",
-                            font=dict(
-                                family="Inter, sans-serif",
-                                size=12,
-                                color=COLORS["text"]
-                            ),
-                            margin=dict(l=8, r=8, t=75, b=8),
-                            height=max(340, len(ordem) * 28 + 130),
-                            hoverlabel=dict(
-                                bgcolor=COLORS["deep"],
-                                font_color=COLORS["white"],
-                                font_size=12,
-                                font_family="Inter, sans-serif",
-                            ),
-                            legend=dict(
-                                orientation="h",
-                                x=0.5,
-                                xanchor="center",
-                                y=1.03,
-                                yanchor="bottom",
-                                bgcolor="rgba(0,0,0,0)",
-                            ),
-                            xaxis=dict(
-                                title=None,
-                                showgrid=True,
-                                gridcolor=COLORS["grid"],
-                                tickmode="array",
-                                tickvals=tickvals_x,
-                                ticktext=ticktext_x,
-                            ),
-                            yaxis=dict(
-                                title=None,
-                                tickvals=tickvals_y,
-                                ticktext=ticktext_y_left,
-                                showgrid=False,
-                            ),
-                            yaxis2=dict(
-                                title="Qtde | % Normal",
-                                tickvals=tickvals_y,
-                                ticktext=ticktext_y_right,
-                                overlaying="y",
-                                side="right",
-                                showgrid=False,
-                                tickfont=dict(color=COLORS["muted"], size=10),
-                                titlefont=dict(color=COLORS["muted"], size=11),
-                            ),
-                        )
+            except ValueError:
+                st.error("Digite apenas números no código do atendimento.")
 
-                        st.plotly_chart(fig, use_container_width=True)
+
+# ============================================================
+# TAB 4 — MAPA INTEGRADO
+# ============================================================
+with tab4:
+    section_header("Priorização integrada por setor, exame e tempo")
+
+    c7, c8 = st.columns([1, 1])
+
+    with c7:
+        top_sv = df["Setor Solicitante"].value_counts().head(8).index
+        top_ev = df["Descrição Exame"].value_counts().head(10).index
+
+        sub = df[
+            (df["Setor Solicitante"].isin(top_sv)) &
+            (df["Descrição Exame"].isin(top_ev))
+        ].copy()
+
+        piv_taxa = (
+            sub.groupby(["Setor Solicitante", "Descrição Exame"])["Flag_Rep"]
+            .mean()
+            .mul(100)
+            .round(1)
+            .unstack()
+        )
+
+        piv_custo = (
+            sub.groupby(["Setor Solicitante", "Descrição Exame"])["Custo_Rep"]
+            .sum()
+            .round(0)
+            .unstack()
+            .fillna(0)
+        )
+
+        annotations = []
+        for i in range(piv_taxa.shape[0]):
+            row = []
+            for j in range(piv_taxa.shape[1]):
+                taxa = piv_taxa.values[i, j]
+                custo = piv_custo.values[i, j]
+                if pd.isna(taxa):
+                    row.append("—")
+                else:
+                    row.append(f"{taxa:.0f}%\nR${custo:,.0f}")
+            annotations.append(row)
+
+        zmax_heat = 1
+        if not np.isnan(piv_taxa.values).all():
+            zmax_heat = max(np.nanmax(piv_taxa.values), 1)
+
+        fig = go.Figure(
+            go.Heatmap(
+                z=piv_taxa.values,
+                x=[truncate_text(x.title(), 22) for x in piv_taxa.columns],
+                y=[truncate_text(x, 24) for x in piv_taxa.index],
+                colorscale=[
+                    [0.00, "#EFF7F3"],
+                    [0.30, COLORS["support_mint"]],
+                    [0.55, COLORS["primary_light"]],
+                    [0.75, COLORS["alert"]],
+                    [1.00, COLORS["danger_dark"]],
+                ],
+                zmin=0,
+                zmax=zmax_heat,
+                text=annotations,
+                texttemplate="%{text}",
+                textfont=dict(size=9),
+                colorbar=dict(title="Taxa rep. %", ticksuffix="%"),
+                hovertemplate="<b>%{y}</b><br>%{x}<br>Taxa: %{z:.1f}%<extra></extra>",
+            )
+        )
+
+        fig.update_layout(
+            **plot_layout("Taxa de repetição e custo por setor × exame", height=410),
+            xaxis=dict(title=None, tickangle=-35),
+            yaxis=dict(title=None),
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
     with c8:
         piv_hora = (
@@ -1478,18 +1505,11 @@ with tab3:
             mode="markers",
             marker=dict(
                 size=np.clip(combo_plot["Reps"] * 3 + 10, 10, 72),
-                color=color_scale_list(
-                    combo_plot["Taxa_Rep"],
-                    vmin=0,
-                    vmax=max(combo_plot["Taxa_Rep"].max(), 1) if not combo_plot.empty else 1,
-                ),
+                color=color_scale_list(combo_plot["Taxa_Rep"], vmin=0, vmax=max(combo_plot["Taxa_Rep"].max(), 1) if not combo_plot.empty else 1),
                 opacity=0.82,
                 line=dict(color="white", width=0.9),
             ),
-            customdata=np.stack(
-                [combo_plot["Taxa_Rep"], combo_plot["Reps"], combo_plot["Custo_Rep"]],
-                axis=1,
-            ) if not combo_plot.empty else None,
+            customdata=np.stack([combo_plot["Taxa_Rep"], combo_plot["Reps"], combo_plot["Custo_Rep"]], axis=1) if not combo_plot.empty else None,
             hovertemplate=(
                 "<b>%{y}</b><br>%{x}<br>"
                 "Taxa: %{customdata[0]:.1f}%<br>"
