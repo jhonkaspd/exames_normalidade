@@ -88,70 +88,93 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
  
 /* Esconder menu, header e rodapé nativos do Streamlit */
 #MainMenu, footer, header { visibility: hidden; }
+</style>
+""", unsafe_allow_html=True)
  
-/* Botão flutuante de abrir/fechar sidebar */
-#lab-sidebar-toggle {
-    position:      fixed;
-    top:           12px;
-    left:          12px;
-    z-index:       9999999;
-    width:         36px;
-    height:        36px;
-    background:    #0D1B2A;
-    border:        1px solid #1E3A5F;
-    border-radius: 8px;
-    cursor:        pointer;
-    display:       flex;
-    align-items:   center;
+# ─────────────────────────────────────────────────────────────────────
+# BOTÃO FLUTUANTE DE TOGGLE DA SIDEBAR
+# Usa st.components.v1.html que é renderizado sem sandbox de iframe,
+# tendo acesso direto ao DOM da página e podendo manipular a sidebar.
+# ─────────────────────────────────────────────────────────────────────
+import streamlit.components.v1 as components
+ 
+components.html("""
+<style>
+  #sidebar-fab {
+    position:        fixed;
+    top:             12px;
+    left:            12px;
+    z-index:         9999999;
+    width:           36px;
+    height:          36px;
+    background:      #0D1B2A;
+    border:          1.5px solid #1E3A5F;
+    border-radius:   8px;
+    cursor:          pointer;
+    display:         flex;
+    align-items:     center;
     justify-content: center;
-    box-shadow:    0 2px 8px rgba(0,0,0,0.45);
-    transition:    background 0.15s, box-shadow 0.15s;
-}
-#lab-sidebar-toggle:hover {
-    background:  #1E3A5F;
-    box-shadow:  0 4px 14px rgba(0,0,0,0.60);
-}
-#lab-sidebar-toggle svg {
-    width:  18px;
-    height: 18px;
-    fill:   #C8D8E8;
-}
+    box-shadow:      0 2px 10px rgba(0,0,0,0.50);
+    transition:      background 0.15s, box-shadow 0.15s;
+  }
+  #sidebar-fab:hover { background: #1E3A5F; box-shadow: 0 4px 16px rgba(0,0,0,0.65); }
+  #sidebar-fab svg   { width: 18px; height: 18px; fill: #C8D8E8; }
 </style>
  
-<!-- Botão flutuante que aciona o toggle nativo do Streamlit -->
-<div id="lab-sidebar-toggle" title="Abrir / fechar filtros" onclick="toggleSidebar()">
-  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3" y="5"  width="18" height="2" rx="1"/>
-    <rect x="3" y="11" width="18" height="2" rx="1"/>
-    <rect x="3" y="17" width="18" height="2" rx="1"/>
-  </svg>
+<div id="sidebar-fab" title="Abrir / fechar filtros">
+  <svg viewBox="0 0 24 24"><rect x="3" y="5"  width="18" height="2" rx="1"/>
+                           <rect x="3" y="11" width="18" height="2" rx="1"/>
+                           <rect x="3" y="17" width="18" height="2" rx="1"/></svg>
 </div>
  
 <script>
-function toggleSidebar() {
-    // Tenta todos os seletores conhecidos do botão nativo do Streamlit
-    var selectors = [
-        '[data-testid="collapsedControl"] button',
-        '[data-testid="stSidebarCollapsedControl"] button',
-        '[data-testid="collapsedControl"]',
-        '[data-testid="stSidebarCollapsedControl"]',
-        'button[kind="header"]',
-        'section[data-testid="stSidebar"] + div button',
-    ];
-    for (var i = 0; i < selectors.length; i++) {
-        var btn = window.parent.document.querySelector(selectors[i]);
-        if (btn) { btn.click(); return; }
+(function() {
+  var fab = document.getElementById('sidebar-fab');
+ 
+  // Seletores do botão nativo do Streamlit em ordem de prioridade
+  var SELECTORS = [
+    'button[data-testid="collapsedControl"]',
+    '[data-testid="collapsedControl"] button',
+    '[data-testid="stSidebarCollapsedControl"] button',
+    '[data-testid="stSidebarCollapsedControl"]',
+  ];
+ 
+  function findToggleBtn(doc) {
+    for (var i = 0; i < SELECTORS.length; i++) {
+      var el = doc.querySelector(SELECTORS[i]);
+      if (el) return el;
     }
-    // Fallback: altera a largura da sidebar diretamente via CSS
-    var sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
-    if (sidebar) {
-        var curr = window.parent.getComputedStyle(sidebar).width;
-        sidebar.style.width = (parseInt(curr) > 10) ? '0px' : '21rem';
-        sidebar.style.overflow = (parseInt(curr) > 10) ? 'hidden' : 'visible';
+    return null;
+  }
+ 
+  function toggle() {
+    // Tenta no documento raiz primeiro, depois em iframes irmãos
+    var docs = [document, window.parent ? window.parent.document : null];
+    for (var d = 0; d < docs.length; d++) {
+      if (!docs[d]) continue;
+      var btn = findToggleBtn(docs[d]);
+      if (btn) { btn.click(); return; }
     }
-}
+ 
+    // Fallback direto: esconde/mostra a sidebar via estilo
+    var targets = [document, window.parent ? window.parent.document : null];
+    for (var t = 0; t < targets.length; t++) {
+      if (!targets[t]) continue;
+      var sb = targets[t].querySelector('[data-testid="stSidebar"]');
+      if (sb) {
+        var w = parseInt(window.getComputedStyle(sb).width || '300');
+        sb.style.transition = 'width 0.3s';
+        sb.style.width      = w > 20 ? '0px' : '21rem';
+        sb.style.overflow   = w > 20 ? 'hidden' : '';
+        return;
+      }
+    }
+  }
+ 
+  fab.addEventListener('click', toggle);
+})();
 </script>
-""", unsafe_allow_html=True)
+""", height=0, scrolling=False)
  
 # ─────────────────────────────────────────────────────────────────────
 # PALETA E TEMA PLOTLY
