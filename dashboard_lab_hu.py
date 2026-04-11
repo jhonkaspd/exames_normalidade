@@ -1381,22 +1381,21 @@ with tab3:
                     ]
 
                     fig.update_layout(
-                        **plot_layout(
-                            f"Linha do tempo · atendimento {atendimento_id}",
-                            height=max(300, len(ordem) * 28 + 130)
-                        ),
+                        **plot_layout(height=max(300, len(ordem) * 28 + 130)),
 
-                        # 2) título centralizado e legenda centralizada abaixo dele
+                        # ✅ título único e centralizado
                         title=dict(
                             text=f"Linha do tempo · atendimento {atendimento_id}",
                             x=0.5,
                             xanchor="center"
                         ),
+
+                        # ✅ legenda centralizada abaixo do título
                         legend=dict(
                             orientation="h",
                             x=0.5,
                             xanchor="center",
-                            y=1.04,
+                            y=1.05,
                             yanchor="bottom"
                         ),
 
@@ -1408,6 +1407,7 @@ with tab3:
                             tickvals=tick_dates,
                             ticktext=tick_text
                         ),
+
                         yaxis=dict(
                             title=None,
                             tickvals=list(range(len(ordem))),
@@ -1415,8 +1415,7 @@ with tab3:
                             showgrid=False,
                         ),
 
-                        # espaço extra no topo para evitar sobreposição
-                        margin=dict(t=95, l=40, r=20, b=40)
+                        margin=dict(t=90)  # espaço para título + legenda
                     )
 
                     st.plotly_chart(fig, use_container_width=True)
