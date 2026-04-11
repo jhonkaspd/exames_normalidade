@@ -1,8 +1,8 @@
 # dashboard_lab_hu.py
 # ============================================================
-# DASHBOARD — MONITORAMENTO LABORATORIAL HU
-# Repetições desnecessárias de exames em pacientes internados
-# Versão redesenhada com identidade visual Unimed
+# LAB VISION | HU
+# Monitoramento de Repetições Desnecessárias de Exames
+# Versão refinada — visual executivo / institucional Unimed
 # ============================================================
 
 import warnings
@@ -26,7 +26,7 @@ st.set_page_config(
 
 
 # ============================================================
-# PALETA INSTITUCIONAL UNIMED
+# PALETA
 # ============================================================
 COLORS = {
     "primary": "#00995D",
@@ -62,7 +62,7 @@ DIAS_PT = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
 
 
 # ============================================================
-# CSS GLOBAL
+# CSS
 # ============================================================
 def inject_css():
     st.markdown(
@@ -77,51 +77,44 @@ def inject_css():
 
         .stApp {{
             background:
-                radial-gradient(circle at top right, rgba(182,212,76,0.12), transparent 25%),
-                radial-gradient(circle at top left, rgba(0,153,93,0.10), transparent 30%),
-                linear-gradient(180deg, #F6FBF8 0%, #F2F7F4 100%);
+                radial-gradient(circle at top right, rgba(182,212,76,0.10), transparent 24%),
+                radial-gradient(circle at top left, rgba(0,153,93,0.08), transparent 28%),
+                linear-gradient(180deg, #F7FBF8 0%, #F2F7F4 100%);
         }}
 
         .block-container {{
-            max-width: 1550px;
-            padding-top: 1.2rem;
+            max-width: 1580px;
+            padding-top: 1.1rem;
             padding-bottom: 2rem;
-            padding-left: 1.6rem;
-            padding-right: 1.6rem;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
         }}
 
-        /* Sidebar mais visível */
         [data-testid="stSidebar"] {{
-            background: linear-gradient(180deg, #0A3E3D 0%, #063434 100%) !important;
-            border-right: 2px solid rgba(255,255,255,0.18);
-            min-width: 320px !important;
-            box-shadow: 8px 0 30px rgba(0,0,0,0.18);
+            background: linear-gradient(180deg, #083A39 0%, #052F2F 100%) !important;
+            border-right: 2px solid rgba(255,255,255,0.14);
+            min-width: 325px !important;
+            box-shadow: 8px 0 26px rgba(0,0,0,0.18);
         }}
 
         [data-testid="stSidebar"] > div:first-child {{
-            background: linear-gradient(180deg, #0A3E3D 0%, #063434 100%) !important;
+            background: linear-gradient(180deg, #083A39 0%, #052F2F 100%) !important;
         }}
 
         [data-testid="stSidebar"] * {{
-            color: #EAF7F1 !important;
+            color: #ECF8F2 !important;
         }}
 
-        [data-testid="stSidebar"] .stSelectbox label,
-        [data-testid="stSidebar"] .stMarkdown,
-        [data-testid="stSidebar"] p,
-        [data-testid="stSidebar"] span,
-        [data-testid="stSidebar"] div {{
-            color: #EAF7F1 !important;
-        }}
-
-        [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] > div {{
+        [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] > div,
+        [data-testid="stSidebar"] .stMultiSelect div[data-baseweb="select"] > div {{
             background-color: rgba(255,255,255,0.08) !important;
-            border: 1px solid rgba(255,255,255,0.18) !important;
+            border: 1px solid rgba(255,255,255,0.16) !important;
             border-radius: 14px;
         }}
 
-        [data-testid="stSidebarNav"] {{
-            background: transparent !important;
+        [data-testid="stSidebar"] input {{
+            background-color: rgba(255,255,255,0.08) !important;
+            color: white !important;
         }}
 
         #MainMenu, footer, header {{
@@ -132,29 +125,29 @@ def inject_css():
             position: relative;
             overflow: hidden;
             background:
-                linear-gradient(135deg, rgba(0,75,82,0.98) 0%, rgba(0,153,93,0.94) 55%, rgba(182,212,76,0.88) 100%);
-            border-radius: 24px;
-            padding: 1.4rem 1.6rem 1.5rem 1.6rem;
-            box-shadow: 0 14px 40px rgba(0, 75, 82, 0.18);
-            border: 1px solid rgba(255,255,255,0.16);
+                linear-gradient(135deg, rgba(0,75,82,0.98) 0%, rgba(0,153,93,0.94) 58%, rgba(182,212,76,0.88) 100%);
+            border-radius: 26px;
+            padding: 1.5rem 1.6rem 1.5rem 1.6rem;
+            box-shadow: 0 16px 40px rgba(0, 75, 82, 0.18);
+            border: 1px solid rgba(255,255,255,0.14);
             margin-bottom: 1rem;
         }}
 
         .hero:before {{
             content: "";
             position: absolute;
-            right: -40px;
-            top: -40px;
-            width: 200px;
-            height: 200px;
-            background: rgba(255,255,255,0.08);
-            filter: blur(4px);
+            right: -30px;
+            top: -30px;
+            width: 220px;
+            height: 220px;
             border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            filter: blur(5px);
         }}
 
         .hero-title {{
             color: white;
-            font-size: 1.8rem;
+            font-size: 1.9rem;
             font-weight: 800;
             line-height: 1.05;
             letter-spacing: -0.03em;
@@ -162,9 +155,9 @@ def inject_css():
         }}
 
         .hero-sub {{
-            color: rgba(255,255,255,0.88);
-            font-size: 0.96rem;
-            line-height: 1.45;
+            color: rgba(255,255,255,0.90);
+            font-size: 0.97rem;
+            line-height: 1.5;
             margin-bottom: 0.9rem;
             max-width: 980px;
         }}
@@ -179,22 +172,22 @@ def inject_css():
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
-            padding: 0.42rem 0.75rem;
+            padding: 0.42rem 0.78rem;
             border-radius: 999px;
             background: rgba(255,255,255,0.14);
             color: white;
-            font-size: 0.78rem;
-            font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.12);
+            font-size: 0.77rem;
+            font-weight: 700;
+            border: 1px solid rgba(255,255,255,0.14);
             backdrop-filter: blur(6px);
         }}
 
         .section-title {{
-            margin-top: 1.15rem;
-            margin-bottom: 0.75rem;
+            margin-top: 0.9rem;
+            margin-bottom: 0.7rem;
             display: flex;
             align-items: center;
-            gap: 0.65rem;
+            gap: 0.6rem;
         }}
 
         .section-title .dot {{
@@ -213,15 +206,25 @@ def inject_css():
             color: {COLORS["deep"]};
         }}
 
+        .caption-box {{
+            background: linear-gradient(180deg, rgba(193,208,185,0.22), rgba(255,255,255,0.76));
+            border: 1px solid {COLORS["border"]};
+            padding: 0.8rem 0.95rem;
+            border-radius: 16px;
+            color: {COLORS["muted"]};
+            font-size: 0.82rem;
+            margin-bottom: 0.85rem;
+        }}
+
         .kpi-card {{
             position: relative;
             overflow: hidden;
-            background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(247,251,248,0.98) 100%);
+            background: linear-gradient(180deg, rgba(255,255,255,0.99) 0%, rgba(248,252,249,0.98) 100%);
             border: 1px solid {COLORS["border"]};
             border-radius: 22px;
-            padding: 1rem 1.05rem 1rem 1.05rem;
-            min-height: 136px;
-            box-shadow: 0 12px 28px rgba(0,75,82,0.07);
+            padding: 1rem 1.05rem 0.95rem 1.05rem;
+            min-height: 138px;
+            box-shadow: 0 12px 26px rgba(0,75,82,0.07);
         }}
 
         .kpi-card:before {{
@@ -271,7 +274,7 @@ def inject_css():
             font-size: 0.82rem;
             color: {COLORS["muted"]};
             line-height: 1.35;
-            min-height: 38px;
+            min-height: 40px;
         }}
 
         .kpi-bar {{
@@ -288,6 +291,43 @@ def inject_css():
             background: linear-gradient(90deg, var(--accent), var(--accent-2));
         }}
 
+        .info-note {{
+            background: rgba(255,255,255,0.82);
+            border: 1px solid {COLORS["border"]};
+            border-left: 4px solid {COLORS["deep"]};
+            border-radius: 14px;
+            padding: 0.75rem 0.9rem;
+            color: {COLORS["muted"]};
+            font-size: 0.80rem;
+            line-height: 1.55;
+            margin-top: 0.35rem;
+            margin-bottom: 0.6rem;
+        }}
+
+        .insight-card {{
+            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(243,249,245,0.96));
+            border: 1px solid {COLORS["border"]};
+            border-radius: 18px;
+            padding: 0.9rem 1rem;
+            box-shadow: 0 10px 24px rgba(0,75,82,0.05);
+            min-height: 125px;
+        }}
+
+        .insight-title {{
+            font-size: 0.76rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: {COLORS["deep"]};
+            margin-bottom: 0.45rem;
+        }}
+
+        .insight-text {{
+            font-size: 0.84rem;
+            line-height: 1.5;
+            color: {COLORS["muted"]};
+        }}
+
         .footer-note {{
             color: {COLORS["muted"]};
             font-size: 0.75rem;
@@ -297,31 +337,8 @@ def inject_css():
             border-top: 1px solid {COLORS["border"]};
         }}
 
-        .caption-box {{
-            background: linear-gradient(180deg, rgba(193,208,185,0.22), rgba(255,255,255,0.75));
-            border: 1px solid {COLORS["border"]};
-            padding: 0.75rem 0.9rem;
-            border-radius: 16px;
-            color: {COLORS["muted"]};
-            font-size: 0.8rem;
-            margin-bottom: 0.75rem;
-        }}
-
-        .info-note {{
-            background: rgba(255,255,255,0.78);
-            border: 1px solid {COLORS["border"]};
-            border-left: 4px solid {COLORS["deep"]};
-            border-radius: 14px;
-            padding: 0.75rem 0.9rem;
-            color: {COLORS["muted"]};
-            font-size: 0.80rem;
-            line-height: 1.5;
-            margin-top: 0.35rem;
-            margin-bottom: 0.55rem;
-        }}
-
         div[data-testid="stMetric"] {{
-            background: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.84);
             border: 1px solid {COLORS["border"]};
             border-radius: 16px;
             padding: 0.75rem 0.9rem;
@@ -330,7 +347,25 @@ def inject_css():
         div[data-testid="stExpander"] {{
             border: 1px solid {COLORS["border"]};
             border-radius: 18px;
-            background: rgba(255,255,255,0.75);
+            background: rgba(255,255,255,0.76);
+        }}
+
+        .stTabs [data-baseweb="tab-list"] {{
+            gap: 8px;
+        }}
+
+        .stTabs [data-baseweb="tab"] {{
+            background: rgba(255,255,255,0.72);
+            border-radius: 14px;
+            border: 1px solid {COLORS["border"]};
+            padding: 10px 16px;
+            font-weight: 700;
+            color: {COLORS["deep"]};
+        }}
+
+        .stTabs [aria-selected="true"] {{
+            background: linear-gradient(180deg, rgba(0,153,93,0.10), rgba(182,212,76,0.12));
+            border-color: rgba(0,153,93,0.35);
         }}
         </style>
         """,
@@ -377,6 +412,18 @@ def info_note(text):
     st.markdown(f"""<div class="info-note">{text}</div>""", unsafe_allow_html=True)
 
 
+def insight_card(title, text):
+    st.markdown(
+        f"""
+        <div class="insight-card">
+            <div class="insight-title">{title}</div>
+            <div class="insight-text">{text}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def kpi_card(label, value, sub, accent, icon="•", fill=0.7, accent_2=None):
     accent_2 = accent_2 or COLORS["primary_light"]
     accent_soft = f"{accent}22"
@@ -400,7 +447,7 @@ def plot_layout(title, height=380, legend=None, **kwargs):
     base = dict(
         title=dict(text=title, x=0, font=dict(size=15, color=COLORS["deep"])),
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(255,255,255,0.75)",
+        plot_bgcolor="rgba(255,255,255,0.76)",
         font=dict(family="Inter, sans-serif", size=12, color=COLORS["text"]),
         margin=dict(l=8, r=8, t=50, b=8),
         height=height,
@@ -450,7 +497,7 @@ def color_scale_list(values, vmin=0, vmax=100):
 
 
 # ============================================================
-# LEITURA E PREPARAÇÃO DOS DADOS
+# DADOS
 # ============================================================
 @st.cache_data(ttl=3600, show_spinner="Carregando dados laboratoriais...")
 def carregar_dados(path="dados_lab_hu.xlsx"):
@@ -505,7 +552,6 @@ def carregar_dados(path="dados_lab_hu.xlsx"):
 
     df["Flag_Rep_Alerta"] = ((df["Flag_Rep"] == 1) & (df["Flag_Rep_Crit"] == 0)).astype(int)
     df["Custo_Rep"] = df["Custo_Unit"] * df["Flag_Rep"]
-    df["Custo_Rep_Crit"] = df["Custo_Unit"] * df["Flag_Rep_Crit"]
 
     return df
 
@@ -516,23 +562,33 @@ def carregar_dados(path="dados_lab_hu.xlsx"):
 with st.sidebar:
     st.markdown(
         """
-        <div style="padding-top:0.2rem;">
-            <div style="font-size:1.1rem;font-weight:800;">Lab Vision</div>
-            <div style="font-size:0.83rem;opacity:0.85;">Monitoramento de repetições laboratoriais</div>
+        <div style="padding-top:0.15rem;">
+            <div style="font-size:1.15rem;font-weight:800;">Lab Vision</div>
+            <div style="font-size:0.83rem;opacity:0.88;">Repetições laboratoriais em internação</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.markdown("<div style='height:0.8rem'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:0.85rem'></div>", unsafe_allow_html=True)
 
     df_raw = carregar_dados()
+
     setores = sorted(df_raw["Setor Solicitante"].dropna().unique().tolist())
+    exames_all = sorted(df_raw["Descrição Exame"].dropna().unique().tolist())
 
     setor_sel = st.selectbox(
         "Setor solicitante",
         ["— Todos os setores —"] + setores,
         index=0,
+    )
+
+    top_n_exames = st.slider("Top N exames", min_value=5, max_value=20, value=10, step=1)
+
+    exame_filtro = st.multiselect(
+        "Filtrar exames específicos",
+        options=exames_all,
+        default=[],
     )
 
     datas = pd.to_datetime(df_raw["DataHoraPedido"])
@@ -541,7 +597,7 @@ with st.sidebar:
     st.markdown("---")
     st.markdown(
         f"""
-        <div style="font-size:0.78rem;line-height:1.65;opacity:0.92;">
+        <div style="font-size:0.78rem;line-height:1.65;opacity:0.94;">
             <b>Base analisada</b><br>
             {periodo_label}<br><br>
             <b>Fonte</b><br>
@@ -555,14 +611,19 @@ with st.sidebar:
 
 
 # ============================================================
-# FILTRO
+# FILTROS
 # ============================================================
-if setor_sel == "— Todos os setores —":
-    df = df_raw.copy()
-    titulo_setor = "Todos os setores"
-else:
-    df = df_raw[df_raw["Setor Solicitante"] == setor_sel].copy()
+df = df_raw.copy()
+
+if setor_sel != "— Todos os setores —":
+    df = df[df["Setor Solicitante"] == setor_sel].copy()
     titulo_setor = setor_sel.title()
+else:
+    titulo_setor = "Todos os setores"
+
+if exame_filtro:
+    exame_filtro_up = [x.upper() for x in exame_filtro]
+    df = df[df["Descrição Exame"].isin(exame_filtro_up)].copy()
 
 if df.empty:
     st.warning("Não há dados disponíveis para o filtro selecionado.")
@@ -593,7 +654,7 @@ periodo_fim = pd.to_datetime(df["DataHoraPedido"]).max()
 
 
 # ============================================================
-# HERO HEADER
+# HERO
 # ============================================================
 st.markdown(
     f"""
@@ -607,7 +668,7 @@ st.markdown(
             <span class="badge">🏥 Hospital Unimed</span>
             <span class="badge">🧭 Escopo: {titulo_setor}</span>
             <span class="badge">📅 Período: {periodo_inicio:%d/%m/%Y} a {periodo_fim:%d/%m/%Y}</span>
-            <span class="badge">🧪 {format_int(total_exames)} exames analisados</span>
+            <span class="badge">🧪 {format_int(total_exames)} exames</span>
             <span class="badge">💸 {format_money(custo_rep_mes)} em repetições</span>
         </div>
     </div>
@@ -618,8 +679,8 @@ st.markdown(
 st.markdown(
     """
     <div class="caption-box">
-        <b>Leitura executiva:</b> o dashboard destaca onde há maior concentração de resultados normais seguidos de novos pedidos,
-        em especial quando a repetição ocorre abaixo do intervalo clínico esperado para o exame.
+        <b>Leitura executiva:</b> o painel prioriza combinações exame × setor e perfis de paciente
+        onde há maior incidência de resultados normais repetidos, especialmente abaixo do intervalo clínico esperado.
     </div>
     """,
     unsafe_allow_html=True,
@@ -627,7 +688,7 @@ st.markdown(
 
 
 # ============================================================
-# KPI CARDS
+# KPIS
 # ============================================================
 k1, k2, k3, k4 = st.columns(4)
 
@@ -639,7 +700,7 @@ with k1:
             f"{format_int(total_pacientes)} pacientes · {format_int(total_pedidos) if pd.notna(total_pedidos) else '—'} pedidos",
             COLORS["deep"],
             icon="🧪",
-            fill=min(total_exames / max(total_exames, 1), 1),
+            fill=1,
             accent_2=COLORS["primary"],
         ),
         unsafe_allow_html=True,
@@ -667,7 +728,7 @@ with k3:
             f"{format_pct(taxa_rep)} do total · {format_int(reps_crit)} críticas",
             COLORS["alert"],
             icon="⚠️",
-            fill=min(taxa_rep / max(taxa_rep + 5, 1), 1),
+            fill=min((taxa_rep / 20), 1),
             accent_2=COLORS["danger"],
         ),
         unsafe_allow_html=True,
@@ -681,7 +742,7 @@ with k4:
             f"Projeção anual estimada: {format_money(custo_rep_ano)}",
             COLORS["danger_dark"],
             icon="💰",
-            fill=min(custo_rep_mes / max(custo_rep_mes + 500, 1), 1),
+            fill=min((custo_rep_mes / (custo_rep_mes + 1000)), 1),
             accent_2=COLORS["alert"],
         ),
         unsafe_allow_html=True,
@@ -689,769 +750,743 @@ with k4:
 
 
 # ============================================================
-# MÓDULO 1 — VISÃO DE NORMALIDADE
+# INSIGHTS EXECUTIVOS
 # ============================================================
-section_header("Módulo 1 · Perfil de normalidade")
+rep_ex_tmp = (
+    df.groupby("Descrição Exame")
+    .agg(Reps=("Flag_Rep", "sum"), Custo=("Custo_Rep", "sum"))
+    .reset_index()
+    .sort_values(["Reps", "Custo"], ascending=False)
+)
 
-c1, c2 = st.columns([1, 1])
+setor_tmp = (
+    df.groupby("Setor Solicitante")
+    .agg(Reps=("Flag_Rep", "sum"), Custo=("Custo_Rep", "sum"))
+    .reset_index()
+    .sort_values(["Reps", "Custo"], ascending=False)
+)
 
-with c1:
-    exame_norm = (
-        df.groupby("Descrição Exame")
+top_exame_txt = rep_ex_tmp.iloc[0]["Descrição Exame"].title() if not rep_ex_tmp.empty else "—"
+top_setor_txt = setor_tmp.iloc[0]["Setor Solicitante"].title() if not setor_tmp.empty else "—"
+
+i1, i2, i3 = st.columns(3)
+with i1:
+    insight_card(
+        "Principal foco de desperdício",
+        f"O exame com maior volume de repetição no filtro atual é <b>{top_exame_txt}</b>, devendo ser avaliado como candidato prioritário para revisão de protocolo e sensibilização assistencial."
+    )
+with i2:
+    insight_card(
+        "Setor prioritário",
+        f"O setor com maior concentração de repetições é <b>{top_setor_txt}</b>, sugerindo oportunidade para atuação local com equipe médica e enfermagem."
+    )
+with i3:
+    insight_card(
+        "Mensagem de gestão",
+        f"O painel indica <b>{format_int(reps)}</b> repetições desnecessárias, com impacto mensal estimado em <b>{format_money(custo_rep_mes)}</b>. O foco ideal é combinar revisão de rotina, educação e monitoramento contínuo."
+    )
+
+
+# ============================================================
+# TABS
+# ============================================================
+tab1, tab2, tab3, tab4 = st.tabs(
+    ["Visão geral", "Repetições", "Jornada do paciente", "Mapa integrado"]
+)
+
+
+# ============================================================
+# TAB 1 — VISÃO GERAL
+# ============================================================
+with tab1:
+    section_header("Normalidade e composição assistencial")
+
+    c1, c2 = st.columns([1, 1])
+
+    with c1:
+        exame_norm = (
+            df.groupby("Descrição Exame")
+            .agg(Total=("Flag_Normal", "count"), Normais=("Flag_Normal", "sum"))
+            .reset_index()
+        )
+        exame_norm = exame_norm[exame_norm["Total"] >= 5].copy()
+        exame_norm["Pct_Normal"] = (exame_norm["Normais"] / exame_norm["Total"] * 100).round(1)
+        exame_norm = exame_norm.sort_values("Pct_Normal", ascending=True).tail(top_n_exames)
+
+        fig = go.Figure()
+        fig.add_trace(
+            go.Bar(
+                y=[truncate_text(x.title(), 34) for x in exame_norm["Descrição Exame"]],
+                x=exame_norm["Pct_Normal"],
+                orientation="h",
+                marker=dict(
+                    color=color_scale_list(exame_norm["Pct_Normal"], vmin=0, vmax=100),
+                    line=dict(color="rgba(255,255,255,0.65)", width=1),
+                ),
+                text=[f"{v:.0f}%" for v in exame_norm["Pct_Normal"]],
+                textposition="outside",
+                customdata=exame_norm["Total"],
+                hovertemplate="<b>%{y}</b><br>Normalidade: %{x:.1f}%<br>Volume: %{customdata:,}<extra></extra>",
+            )
+        )
+        fig.add_vline(
+            x=75,
+            line_dash="dot",
+            line_color=COLORS["deep"],
+            opacity=0.5,
+            annotation_text="referência visual 75%",
+            annotation_position="top",
+        )
+        fig.update_layout(
+            **plot_layout("Normalidade por exame", height=430),
+            xaxis=dict(title=None, range=[0, 110], ticksuffix="%", showgrid=True, gridcolor=COLORS["grid"]),
+            yaxis=dict(title=None, showgrid=False),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    with c2:
+        top_setores = df["Setor Solicitante"].value_counts().head(8).index
+        top_exames = df["Descrição Exame"].value_counts().head(top_n_exames).index
+
+        df_sub = df[
+            (df["Setor Solicitante"].isin(top_setores)) &
+            (df["Descrição Exame"].isin(top_exames))
+        ].copy()
+
+        piv = (
+            df_sub.groupby(["Setor Solicitante", "Descrição Exame"])["Flag_Normal"]
+            .mean()
+            .mul(100)
+            .round(1)
+            .unstack()
+        )
+
+        fig = go.Figure(
+            go.Heatmap(
+                z=piv.values,
+                x=[truncate_text(x.title(), 22) for x in piv.columns],
+                y=[truncate_text(y, 24) for y in piv.index],
+                colorscale=[
+                    [0.00, "#F6D9D5"],
+                    [0.35, COLORS["support_warm"]],
+                    [0.60, COLORS["primary_light"]],
+                    [1.00, COLORS["primary"]],
+                ],
+                zmin=0,
+                zmax=100,
+                text=[[f"{v:.0f}%" if pd.notna(v) else "—" for v in row] for row in piv.values],
+                texttemplate="%{text}",
+                textfont=dict(size=10),
+                colorbar=dict(title="% Normal", ticksuffix="%"),
+                hovertemplate="<b>%{y}</b><br>%{x}<br>Normalidade: %{z:.1f}%<extra></extra>",
+            )
+        )
+        fig.update_layout(
+            **plot_layout("Normalidade por setor × exame", height=430),
+            xaxis=dict(title=None, tickangle=-35),
+            yaxis=dict(title=None),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    setor_stack = (
+        df.groupby("Setor Solicitante")
         .agg(Total=("Flag_Normal", "count"), Normais=("Flag_Normal", "sum"))
         .reset_index()
     )
-    exame_norm = exame_norm[exame_norm["Total"] >= 5].copy()
-    exame_norm["Pct_Normal"] = (exame_norm["Normais"] / exame_norm["Total"] * 100).round(1)
-    exame_norm = exame_norm.sort_values("Pct_Normal", ascending=True)
+    setor_stack = setor_stack[setor_stack["Total"] >= 30].copy()
+    setor_stack["Alterados"] = setor_stack["Total"] - setor_stack["Normais"]
+    setor_stack["Pct_Normal"] = (setor_stack["Normais"] / setor_stack["Total"] * 100).round(1)
+    setor_stack["Pct_Alterado"] = 100 - setor_stack["Pct_Normal"]
+    setor_stack = setor_stack.sort_values("Pct_Normal", ascending=False)
 
     fig = go.Figure()
     fig.add_trace(
         go.Bar(
-            y=[truncate_text(x.title(), 34) for x in exame_norm["Descrição Exame"]],
-            x=exame_norm["Pct_Normal"],
+            y=[truncate_text(x, 34) for x in setor_stack["Setor Solicitante"]],
+            x=setor_stack["Pct_Normal"],
             orientation="h",
-            marker=dict(
-                color=color_scale_list(exame_norm["Pct_Normal"], vmin=0, vmax=100),
-                line=dict(color="rgba(255,255,255,0.65)", width=1),
-            ),
-            text=[f"{v:.0f}%" for v in exame_norm["Pct_Normal"]],
-            textposition="outside",
-            customdata=exame_norm["Total"],
-            hovertemplate="<b>%{y}</b><br>Normalidade: %{x:.1f}%<br>Volume: %{customdata:,}<extra></extra>",
+            name="Normal",
+            marker_color=COLORS["primary"],
+            text=[f"{x:.0f}%" for x in setor_stack["Pct_Normal"]],
+            textposition="inside",
+            textfont=dict(color="white"),
         )
     )
-    fig.add_vline(
-        x=75,
-        line_dash="dot",
-        line_color=COLORS["deep"],
-        opacity=0.5,
-        annotation_text="meta visual 75%",
-        annotation_position="top",
+    fig.add_trace(
+        go.Bar(
+            y=[truncate_text(x, 34) for x in setor_stack["Setor Solicitante"]],
+            x=setor_stack["Pct_Alterado"],
+            orientation="h",
+            name="Alterado",
+            marker_color=COLORS["support_blush"],
+            text=[f"{x:.0f}%" for x in setor_stack["Pct_Alterado"]],
+            textposition="inside",
+        )
     )
     fig.update_layout(
-        **plot_layout("Normalidade por exame", height=430),
-        xaxis=dict(
-            title=None,
-            range=[0, 110],
-            ticksuffix="%",
-            showgrid=True,
-            gridcolor=COLORS["grid"],
-            zeroline=False,
-        ),
+        **plot_layout("Composição normal × alterado por setor", height=360, barmode="stack"),
+        xaxis=dict(title=None, ticksuffix="%", range=[0, 100], showgrid=True, gridcolor=COLORS["grid"]),
         yaxis=dict(title=None, showgrid=False),
     )
     st.plotly_chart(fig, use_container_width=True)
 
-with c2:
-    top_setores = df["Setor Solicitante"].value_counts().head(8).index
-    top_exames = df["Descrição Exame"].value_counts().head(10).index
 
-    df_sub = df[
-        (df["Setor Solicitante"].isin(top_setores)) &
-        (df["Descrição Exame"].isin(top_exames))
-    ].copy()
+# ============================================================
+# TAB 2 — REPETIÇÕES
+# ============================================================
+with tab2:
+    section_header("Análise detalhada das repetições desnecessárias")
 
-    piv = (
-        df_sub.groupby(["Setor Solicitante", "Descrição Exame"])["Flag_Normal"]
-        .mean()
-        .mul(100)
-        .round(1)
-        .unstack()
+    rep_df = df[df["Flag_Rep"] == 1].copy()
+    c3, c4 = st.columns([1, 1])
+
+    with c3:
+        rep_ex = (
+            df.groupby("Descrição Exame")
+            .agg(
+                Total=("Flag_Normal", "count"),
+                Reps=("Flag_Rep", "sum"),
+                Criticas=("Flag_Rep_Crit", "sum"),
+                Custo_Rep=("Custo_Rep", "sum"),
+            )
+            .reset_index()
+        )
+        rep_ex = rep_ex[rep_ex["Reps"] > 0].copy()
+        rep_ex["Alerta"] = rep_ex["Reps"] - rep_ex["Criticas"]
+        rep_ex["Taxa_Rep"] = (rep_ex["Reps"] / rep_ex["Total"] * 100).round(1)
+        rep_ex = rep_ex.sort_values("Reps", ascending=True).tail(top_n_exames)
+
+        fig = go.Figure()
+        fig.add_trace(
+            go.Bar(
+                y=[truncate_text(x.title(), 34) for x in rep_ex["Descrição Exame"]],
+                x=rep_ex["Alerta"],
+                orientation="h",
+                name="Alerta",
+                marker_color=COLORS["alert"],
+            )
+        )
+        fig.add_trace(
+            go.Bar(
+                y=[truncate_text(x.title(), 34) for x in rep_ex["Descrição Exame"]],
+                x=rep_ex["Criticas"],
+                orientation="h",
+                name="Crítica",
+                marker_color=COLORS["danger_dark"],
+            )
+        )
+        fig.update_layout(
+            **plot_layout("Ranking de repetições por exame", height=430, barmode="stack"),
+            xaxis=dict(title=None, showgrid=True, gridcolor=COLORS["grid"]),
+            yaxis=dict(title=None, showgrid=False),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        info_note(
+            "<b>Crítica:</b> repetição de resultado normal após resultado normal anterior, "
+            "realizada abaixo do intervalo clínico esperado para o exame. "
+            "<br><b>Alerta:</b> repetição de resultado normal após resultado normal anterior, "
+            "mas fora da janela classificada como crítica."
+        )
+
+    with c4:
+        bins = [0, 6, 12, 24, 48, 72, 168, 9999]
+        labels = ["<6h", "6–12h", "12–24h", "24–48h", "48–72h", "3–7d", ">7d"]
+
+        if not rep_df.empty:
+            rep_df["Faixa"] = pd.cut(rep_df["Horas_Desde_Anterior"], bins=bins, labels=labels, right=False)
+            dist = rep_df["Faixa"].value_counts().reindex(labels).fillna(0).astype(int)
+        else:
+            dist = pd.Series(0, index=labels)
+
+        colors_interval = [
+            COLORS["danger_dark"],
+            COLORS["danger"],
+            COLORS["alert"],
+            COLORS["warning"],
+            COLORS["support_sand"],
+            COLORS["support_ice"],
+            COLORS["support_mint"],
+        ]
+
+        fig = go.Figure(
+            go.Bar(
+                x=labels,
+                y=dist.values,
+                marker_color=colors_interval,
+                text=dist.values,
+                textposition="outside",
+            )
+        )
+        fig.update_layout(
+            **plot_layout("Intervalo entre repetições normal → normal", height=430),
+            xaxis=dict(title=None, showgrid=False),
+            yaxis=dict(title="Nº de repetições", showgrid=True, gridcolor=COLORS["grid"]),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    setor_rep = (
+        df.groupby("Setor Solicitante")
+        .agg(Total=("Flag_Normal", "count"), Reps=("Flag_Rep", "sum"), Custo_Rep=("Custo_Rep", "sum"))
+        .reset_index()
     )
+    setor_rep = setor_rep[setor_rep["Total"] >= 30].copy()
+    setor_rep["Taxa_Rep"] = (setor_rep["Reps"] / setor_rep["Total"] * 100).round(1)
 
-    fig = go.Figure(
-        go.Heatmap(
-            z=piv.values,
-            x=[truncate_text(x.title(), 24) for x in piv.columns],
-            y=[truncate_text(y, 26) for y in piv.index],
-            colorscale=[
-                [0.00, "#F6D9D5"],
-                [0.35, COLORS["support_warm"]],
-                [0.60, COLORS["primary_light"]],
-                [1.00, COLORS["primary"]],
-            ],
-            zmin=0,
-            zmax=100,
-            text=[
-                [f"{v:.0f}%" if pd.notna(v) else "—" for v in row]
-                for row in piv.values
-            ],
-            texttemplate="%{text}",
-            textfont=dict(size=10),
-            colorbar=dict(title="% Normal", ticksuffix="%"),
-            hovertemplate="<b>%{y}</b><br>%{x}<br>Normalidade: %{z:.1f}%<extra></extra>",
+    x_med = setor_rep["Reps"].median() if not setor_rep.empty else 0
+    y_med = setor_rep["Taxa_Rep"].median() if not setor_rep.empty else 0
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=setor_rep["Reps"],
+            y=setor_rep["Taxa_Rep"],
+            mode="markers+text",
+            text=[truncate_text(x, 22) for x in setor_rep["Setor Solicitante"]],
+            textposition="top center",
+            marker=dict(
+                size=np.sqrt(setor_rep["Custo_Rep"].clip(lower=1)) * 2.6,
+                color=color_scale_list(setor_rep["Taxa_Rep"], vmin=0, vmax=max(setor_rep["Taxa_Rep"].max(), 1)),
+                line=dict(color="white", width=1.2),
+                opacity=0.82,
+            ),
+            customdata=np.stack([setor_rep["Custo_Rep"], setor_rep["Total"]], axis=1),
+            hovertemplate=(
+                "<b>%{text}</b><br>"
+                "Repetições: %{x:,}<br>"
+                "Taxa: %{y:.1f}%<br>"
+                "Custo: R$ %{customdata[0]:,.0f}<br>"
+                "Volume total: %{customdata[1]:,}<extra></extra>"
+            ),
         )
     )
+    fig.add_vline(x=x_med, line_dash="dot", line_color=COLORS["deep"], opacity=0.45)
+    fig.add_hline(y=y_med, line_dash="dot", line_color=COLORS["deep"], opacity=0.45)
     fig.update_layout(
-        **plot_layout("Normalidade por setor × exame", height=430),
-        xaxis=dict(title=None, tickangle=-35),
-        yaxis=dict(title=None),
+        **plot_layout("Setores prioritários · volume × taxa × custo", height=400),
+        xaxis=dict(title="Nº de repetições", showgrid=True, gridcolor=COLORS["grid"]),
+        yaxis=dict(title="Taxa de repetição (%)", ticksuffix="%", showgrid=True, gridcolor=COLORS["grid"]),
     )
     st.plotly_chart(fig, use_container_width=True)
 
-setor_stack = (
-    df.groupby("Setor Solicitante")
-    .agg(Total=("Flag_Normal", "count"), Normais=("Flag_Normal", "sum"))
-    .reset_index()
-)
-setor_stack = setor_stack[setor_stack["Total"] >= 30].copy()
-setor_stack["Alterados"] = setor_stack["Total"] - setor_stack["Normais"]
-setor_stack["Pct_Normal"] = (setor_stack["Normais"] / setor_stack["Total"] * 100).round(1)
-setor_stack["Pct_Alterado"] = 100 - setor_stack["Pct_Normal"]
-setor_stack = setor_stack.sort_values("Pct_Normal", ascending=False)
-
-fig = go.Figure()
-fig.add_trace(
-    go.Bar(
-        y=[truncate_text(x, 34) for x in setor_stack["Setor Solicitante"]],
-        x=setor_stack["Pct_Normal"],
-        orientation="h",
-        name="Normal",
-        marker_color=COLORS["primary"],
-        text=[f"{x:.0f}%" for x in setor_stack["Pct_Normal"]],
-        textposition="inside",
-        textfont=dict(color="white"),
-        hovertemplate="<b>%{y}</b><br>Normal: %{x:.1f}%<extra></extra>",
-    )
-)
-fig.add_trace(
-    go.Bar(
-        y=[truncate_text(x, 34) for x in setor_stack["Setor Solicitante"]],
-        x=setor_stack["Pct_Alterado"],
-        orientation="h",
-        name="Alterado",
-        marker_color=COLORS["support_blush"],
-        text=[f"{x:.0f}%" for x in setor_stack["Pct_Alterado"]],
-        textposition="inside",
-        hovertemplate="<b>%{y}</b><br>Alterado: %{x:.1f}%<extra></extra>",
-    )
-)
-fig.update_layout(
-    **plot_layout("Composição normal × alterado por setor", height=360, barmode="stack"),
-    xaxis=dict(title=None, ticksuffix="%", range=[0, 100], showgrid=True, gridcolor=COLORS["grid"]),
-    yaxis=dict(title=None, showgrid=False),
-)
-st.plotly_chart(fig, use_container_width=True)
-
 
 # ============================================================
-# MÓDULO 2 — REPETIÇÕES DESNECESSÁRIAS
+# TAB 3 — JORNADA
 # ============================================================
-section_header("Módulo 2 · Foco em repetições desnecessárias")
+with tab3:
+    section_header("Perfil assistencial dos pacientes internados")
 
-rep_df = df[df["Flag_Rep"] == 1].copy()
-c3, c4 = st.columns([1, 1])
-
-with c3:
-    rep_ex = (
-        df.groupby("Descrição Exame")
+    pac = (
+        df.groupby("Atendimento")
         .agg(
             Total=("Flag_Normal", "count"),
+            Pct_Normal=("Flag_Normal", "mean"),
             Reps=("Flag_Rep", "sum"),
             Criticas=("Flag_Rep_Crit", "sum"),
+            Exames_Distintos=("Descrição Exame", "nunique"),
             Custo_Rep=("Custo_Rep", "sum"),
+            Primeiro=("DataHoraPedido", "min"),
+            Ultimo=("DataHoraPedido", "max"),
+            Setor=("Setor Solicitante", lambda x: x.value_counts().idxmax()),
         )
         .reset_index()
     )
-    rep_ex = rep_ex[rep_ex["Reps"] > 0].copy()
-    rep_ex["Alerta"] = rep_ex["Reps"] - rep_ex["Criticas"]
-    rep_ex["Taxa_Rep"] = (rep_ex["Reps"] / rep_ex["Total"] * 100).round(1)
-    rep_ex = rep_ex.sort_values("Reps", ascending=True)
 
-    fig = go.Figure()
-    fig.add_trace(
-        go.Bar(
-            y=[truncate_text(x.title(), 34) for x in rep_ex["Descrição Exame"]],
-            x=rep_ex["Alerta"],
-            orientation="h",
-            name="Alerta",
-            marker_color=COLORS["alert"],
-            customdata=rep_ex["Taxa_Rep"],
-            hovertemplate="<b>%{y}</b><br>Repetições alerta: %{x:,}<br>Taxa: %{customdata:.1f}%<extra></extra>",
-        )
-    )
-    fig.add_trace(
-        go.Bar(
-            y=[truncate_text(x.title(), 34) for x in rep_ex["Descrição Exame"]],
-            x=rep_ex["Criticas"],
-            orientation="h",
-            name="Crítica",
-            marker_color=COLORS["danger_dark"],
-            customdata=rep_ex["Custo_Rep"],
-            hovertemplate="<b>%{y}</b><br>Repetições críticas: %{x:,}<br>Custo: R$ %{customdata:,.0f}<extra></extra>",
-        )
-    )
-    fig.update_layout(
-        **plot_layout("Ranking de repetições por exame", height=430, barmode="stack"),
-        xaxis=dict(title=None, showgrid=True, gridcolor=COLORS["grid"]),
-        yaxis=dict(title=None, showgrid=False),
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    pac["Pct_Normal"] = (pac["Pct_Normal"] * 100).round(1)
+    pac["Dias_Internacao"] = ((pac["Ultimo"] - pac["Primeiro"]).dt.total_seconds() / 86400).clip(lower=0).round(1)
+    pac["Reps_Dia"] = (pac["Reps"] / pac["Dias_Internacao"].replace(0, 0.5)).round(2)
 
-    info_note(
-        "<b>Crítica:</b> repetição de resultado normal após resultado normal anterior, "
-        "realizada abaixo do intervalo clínico esperado para o exame. "
-        "<br><b>Alerta:</b> repetição de resultado normal após resultado normal anterior, "
-        "mas fora da janela classificada como crítica."
-    )
+    def classificar_perfil(row):
+        if row["Total"] == 1:
+            return "Pontual"
+        if row["Dias_Internacao"] < 1:
+            return "Passagem rápida"
+        if row["Pct_Normal"] < 40 and row["Reps"] == 0:
+            return "Crítico"
+        if row["Pct_Normal"] >= 70 and row["Reps_Dia"] >= 1:
+            return "Alto desperdício"
+        if row["Pct_Normal"] >= 70 and row["Reps"] > 0:
+            return "Desperdício moderado"
+        if row["Pct_Normal"] >= 70 and row["Reps"] == 0:
+            return "Monitoramento adequado"
+        return "Misto"
 
-with c4:
-    bins = [0, 6, 12, 24, 48, 72, 168, 9999]
-    labels = ["<6h", "6–12h", "12–24h", "24–48h", "48–72h", "3–7d", ">7d"]
+    pac["Perfil"] = pac.apply(classificar_perfil, axis=1)
 
-    if not rep_df.empty:
-        rep_df["Faixa"] = pd.cut(rep_df["Horas_Desde_Anterior"], bins=bins, labels=labels, right=False)
-        dist = rep_df["Faixa"].value_counts().reindex(labels).fillna(0).astype(int)
-    else:
-        dist = pd.Series(0, index=labels)
+    perfil_colors = {
+        "Alto desperdício": COLORS["danger_dark"],
+        "Desperdício moderado": COLORS["alert"],
+        "Misto": COLORS["support_warm"],
+        "Crítico": COLORS["deep"],
+        "Monitoramento adequado": COLORS["primary"],
+        "Passagem rápida": COLORS["support_ice"],
+        "Pontual": COLORS["support_sand"],
+    }
 
-    colors_interval = [
-        COLORS["danger_dark"],
-        COLORS["danger"],
-        COLORS["alert"],
-        COLORS["warning"],
-        COLORS["support_sand"],
-        COLORS["support_ice"],
-        COLORS["support_mint"],
-    ]
+    c5, c6 = st.columns([1.15, 0.85])
 
-    fig = go.Figure(
-        go.Bar(
-            x=labels,
-            y=dist.values,
-            marker_color=colors_interval,
-            text=dist.values,
-            textposition="outside",
-            hovertemplate="Faixa: %{x}<br>Repetições: %{y:,}<extra></extra>",
-        )
-    )
-    fig.update_layout(
-        **plot_layout("Intervalo entre repetições normal → normal", height=430),
-        xaxis=dict(title=None, showgrid=False),
-        yaxis=dict(title="Nº de repetições", showgrid=True, gridcolor=COLORS["grid"]),
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-setor_rep = (
-    df.groupby("Setor Solicitante")
-    .agg(
-        Total=("Flag_Normal", "count"),
-        Reps=("Flag_Rep", "sum"),
-        Custo_Rep=("Custo_Rep", "sum"),
-    )
-    .reset_index()
-)
-setor_rep = setor_rep[setor_rep["Total"] >= 30].copy()
-setor_rep["Taxa_Rep"] = (setor_rep["Reps"] / setor_rep["Total"] * 100).round(1)
-
-x_med = setor_rep["Reps"].median() if not setor_rep.empty else 0
-y_med = setor_rep["Taxa_Rep"].median() if not setor_rep.empty else 0
-
-fig = go.Figure()
-fig.add_trace(
-    go.Scatter(
-        x=setor_rep["Reps"],
-        y=setor_rep["Taxa_Rep"],
-        mode="markers+text",
-        text=[truncate_text(x, 22) for x in setor_rep["Setor Solicitante"]],
-        textposition="top center",
-        marker=dict(
-            size=np.sqrt(setor_rep["Custo_Rep"].clip(lower=1)) * 2.6,
-            color=color_scale_list(setor_rep["Taxa_Rep"], vmin=0, vmax=max(setor_rep["Taxa_Rep"].max(), 1)),
-            line=dict(color="white", width=1.2),
-            opacity=0.82,
-        ),
-        customdata=np.stack([setor_rep["Custo_Rep"], setor_rep["Total"]], axis=1),
-        hovertemplate=(
-            "<b>%{text}</b><br>"
-            "Repetições: %{x:,}<br>"
-            "Taxa: %{y:.1f}%<br>"
-            "Custo: R$ %{customdata[0]:,.0f}<br>"
-            "Volume total: %{customdata[1]:,}<extra></extra>"
-        ),
-    )
-)
-
-fig.add_vline(x=x_med, line_dash="dot", line_color=COLORS["deep"], opacity=0.45)
-fig.add_hline(y=y_med, line_dash="dot", line_color=COLORS["deep"], opacity=0.45)
-
-fig.add_annotation(
-    x=x_med * 0.45 if x_med > 0 else 0.5,
-    y=y_med * 0.45 if y_med > 0 else 0.5,
-    text="Menor prioridade",
-    showarrow=False,
-    font=dict(size=11, color=COLORS["muted"]),
-)
-
-fig.add_annotation(
-    x=max(setor_rep["Reps"].max() * 0.82, x_med + 1) if not setor_rep.empty else 1,
-    y=max(setor_rep["Taxa_Rep"].max() * 0.92, y_med + 0.2) if not setor_rep.empty else 1,
-    text="Alta prioridade",
-    showarrow=False,
-    font=dict(size=11, color=COLORS["danger_dark"]),
-)
-
-fig.update_layout(
-    **plot_layout("Setores prioritários · volume × taxa × custo", height=390),
-    xaxis=dict(title="Nº de repetições", showgrid=True, gridcolor=COLORS["grid"]),
-    yaxis=dict(title="Taxa de repetição (%)", ticksuffix="%", showgrid=True, gridcolor=COLORS["grid"]),
-)
-st.plotly_chart(fig, use_container_width=True)
-
-
-# ============================================================
-# MÓDULO 3 — JORNADA DO PACIENTE
-# ============================================================
-section_header("Módulo 3 · Jornada do paciente")
-
-pac = (
-    df.groupby("Atendimento")
-    .agg(
-        Total=("Flag_Normal", "count"),
-        Pct_Normal=("Flag_Normal", "mean"),
-        Reps=("Flag_Rep", "sum"),
-        Criticas=("Flag_Rep_Crit", "sum"),
-        Exames_Distintos=("Descrição Exame", "nunique"),
-        Custo_Rep=("Custo_Rep", "sum"),
-        Primeiro=("DataHoraPedido", "min"),
-        Ultimo=("DataHoraPedido", "max"),
-        Setor=("Setor Solicitante", lambda x: x.value_counts().idxmax()),
-    )
-    .reset_index()
-)
-
-pac["Pct_Normal"] = (pac["Pct_Normal"] * 100).round(1)
-pac["Dias_Internacao"] = (
-    (pac["Ultimo"] - pac["Primeiro"]).dt.total_seconds() / 86400
-).clip(lower=0).round(1)
-pac["Reps_Dia"] = (pac["Reps"] / pac["Dias_Internacao"].replace(0, 0.5)).round(2)
-
-
-def classificar_perfil(row):
-    if row["Total"] == 1:
-        return "Pontual"
-    if row["Dias_Internacao"] < 1:
-        return "Passagem rápida"
-    if row["Pct_Normal"] < 40 and row["Reps"] == 0:
-        return "Crítico"
-    if row["Pct_Normal"] >= 70 and row["Reps_Dia"] >= 1:
-        return "Alto desperdício"
-    if row["Pct_Normal"] >= 70 and row["Reps"] > 0:
-        return "Desperdício moderado"
-    if row["Pct_Normal"] >= 70 and row["Reps"] == 0:
-        return "Monitoramento adequado"
-    return "Misto"
-
-
-pac["Perfil"] = pac.apply(classificar_perfil, axis=1)
-
-perfil_colors = {
-    "Alto desperdício": COLORS["danger_dark"],
-    "Desperdício moderado": COLORS["alert"],
-    "Misto": COLORS["support_warm"],
-    "Crítico": COLORS["deep"],
-    "Monitoramento adequado": COLORS["primary"],
-    "Passagem rápida": COLORS["support_ice"],
-    "Pontual": COLORS["support_sand"],
-}
-
-c5, c6 = st.columns([1.15, 0.85])
-
-with c5:
-    fig = go.Figure()
-    df_scatter = pac[pac["Dias_Internacao"] >= 1].copy()
-
-    for perfil, grupo in df_scatter.groupby("Perfil"):
-        fig.add_trace(
-            go.Scatter(
-                x=grupo["Dias_Internacao"],
-                y=grupo["Pct_Normal"],
-                mode="markers",
-                name=perfil,
-                marker=dict(
-                    size=np.clip(grupo["Reps"] * 3 + 8, 8, 58),
-                    color=perfil_colors.get(perfil, COLORS["support_sand"]),
-                    opacity=0.75,
-                    line=dict(color="white", width=0.9),
-                ),
-                customdata=np.stack([grupo["Atendimento"], grupo["Reps"], grupo["Custo_Rep"]], axis=1),
-                hovertemplate=(
-                    "Atendimento: %{customdata[0]}<br>"
-                    "Dias: %{x:.1f}<br>"
-                    "Normalidade: %{y:.1f}%<br>"
-                    "Repetições: %{customdata[1]:,}<br>"
-                    "Custo: R$ %{customdata[2]:,.2f}<extra></extra>"
-                ),
-            )
-        )
-
-    fig.add_hline(y=70, line_dash="dot", line_color=COLORS["primary"], opacity=0.65)
-    fig.add_hline(y=40, line_dash="dot", line_color=COLORS["danger"], opacity=0.65)
-
-    fig.update_layout(
-        **plot_layout(
-            "Perfil da população internada",
-            height=410,
-            legend=dict(
-                orientation="v",
-                x=1.01,
-                y=0.5,
-                bgcolor="rgba(0,0,0,0)",
-            ),
-        ),
-        xaxis=dict(title="Dias de internação", showgrid=True, gridcolor=COLORS["grid"]),
-        yaxis=dict(title="Taxa de normalidade (%)", ticksuffix="%", showgrid=True, gridcolor=COLORS["grid"]),
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-    info_note(
-        "<b>Pontual:</b> atendimento com apenas um exame. "
-        "<br><b>Passagem rápida:</b> permanência inferior a 1 dia. "
-        "<br><b>Crítico:</b> baixa normalidade, sem repetição desnecessária relevante. "
-        "<br><b>Monitoramento adequado:</b> alta normalidade sem evidência de desperdício. "
-        "<br><b>Desperdício moderado:</b> alta normalidade com repetições presentes. "
-        "<br><b>Alto desperdício:</b> alta normalidade com elevada repetição por dia. "
-        "<br><b>Misto:</b> perfil intermediário, sem padrão dominante claro."
-    )
-
-with c6:
-    longos = pac[(pac["Dias_Internacao"] >= 7) & (pac["Total"] >= 20)].copy()
-    longos = longos.sort_values("Reps", ascending=False).head(12)
-
-    if not longos.empty:
-        longos["Exames_Dia"] = (longos["Total"] / longos["Dias_Internacao"]).round(1)
-        longos["Reps_Dia"] = (longos["Reps"] / longos["Dias_Internacao"]).round(2)
-        longos["Atendimento_str"] = longos["Atendimento"].astype(str)
-
+    with c5:
         fig = go.Figure()
+        df_scatter = pac[pac["Dias_Internacao"] >= 1].copy()
 
-        fig.add_trace(
-            go.Bar(
-                x=longos["Atendimento_str"],
-                y=longos["Exames_Dia"],
-                name="Exames/dia",
-                marker_color=COLORS["support_ice"],
-                hovertemplate="Atendimento %{x}<br>Exames/dia: %{y:.1f}<extra></extra>",
+        for perfil, grupo in df_scatter.groupby("Perfil"):
+            fig.add_trace(
+                go.Scatter(
+                    x=grupo["Dias_Internacao"],
+                    y=grupo["Pct_Normal"],
+                    mode="markers",
+                    name=perfil,
+                    marker=dict(
+                        size=np.clip(grupo["Reps"] * 3 + 8, 8, 58),
+                        color=perfil_colors.get(perfil, COLORS["support_sand"]),
+                        opacity=0.75,
+                        line=dict(color="white", width=0.9),
+                    ),
+                    customdata=np.stack([grupo["Atendimento"], grupo["Reps"], grupo["Custo_Rep"]], axis=1),
+                    hovertemplate=(
+                        "Atendimento: %{customdata[0]}<br>"
+                        "Dias: %{x:.1f}<br>"
+                        "Normalidade: %{y:.1f}%<br>"
+                        "Repetições: %{customdata[1]:,}<br>"
+                        "Custo: R$ %{customdata[2]:,.2f}<extra></extra>"
+                    ),
+                )
             )
+
+        fig.add_hline(y=70, line_dash="dot", line_color=COLORS["primary"], opacity=0.65)
+        fig.add_hline(y=40, line_dash="dot", line_color=COLORS["danger"], opacity=0.65)
+
+        fig.update_layout(
+            **plot_layout(
+                "Perfil da população internada",
+                height=420,
+                legend=dict(orientation="v", x=1.01, y=0.5, bgcolor="rgba(0,0,0,0)"),
+            ),
+            xaxis=dict(title="Dias de internação", showgrid=True, gridcolor=COLORS["grid"]),
+            yaxis=dict(title="Taxa de normalidade (%)", ticksuffix="%", showgrid=True, gridcolor=COLORS["grid"]),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        info_note(
+            "<b>Pontual:</b> atendimento com apenas um exame. "
+            "<br><b>Passagem rápida:</b> permanência inferior a 1 dia. "
+            "<br><b>Crítico:</b> baixa normalidade, sem repetição desnecessária relevante. "
+            "<br><b>Monitoramento adequado:</b> alta normalidade sem evidência de desperdício. "
+            "<br><b>Desperdício moderado:</b> alta normalidade com repetições presentes. "
+            "<br><b>Alto desperdício:</b> alta normalidade com elevada repetição por dia. "
+            "<br><b>Misto:</b> perfil intermediário, sem padrão dominante claro."
         )
 
-        fig.add_trace(
-            go.Scatter(
-                x=longos["Atendimento_str"],
-                y=longos["Reps_Dia"],
-                mode="lines+markers+text",
-                name="Repetições/dia",
-                marker=dict(size=9, color=COLORS["danger_dark"]),
-                line=dict(color=COLORS["danger_dark"], width=2.5),
-                text=[f"{v:.2f}" for v in longos["Reps_Dia"]],
-                textposition="top center",
-                hovertemplate="Atendimento %{x}<br>Repetições/dia: %{y:.2f}<extra></extra>",
+    with c6:
+        longos = pac[(pac["Dias_Internacao"] >= 7) & (pac["Total"] >= 20)].copy()
+        longos = longos.sort_values("Reps", ascending=False).head(12)
+
+        if not longos.empty:
+            longos["Exames_Dia"] = (longos["Total"] / longos["Dias_Internacao"]).round(1)
+            longos["Reps_Dia"] = (longos["Reps"] / longos["Dias_Internacao"]).round(2)
+            longos["Atendimento_str"] = longos["Atendimento"].astype(str)
+
+            fig = go.Figure()
+            fig.add_trace(
+                go.Bar(
+                    x=longos["Atendimento_str"],
+                    y=longos["Exames_Dia"],
+                    name="Exames/dia",
+                    marker_color=COLORS["support_ice"],
+                    text=[f"{v:.1f}" for v in longos["Exames_Dia"]],
+                    textposition="outside",
+                )
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=longos["Atendimento_str"],
+                    y=longos["Reps_Dia"],
+                    mode="lines+markers+text",
+                    name="Repetições/dia",
+                    marker=dict(size=9, color=COLORS["danger_dark"]),
+                    line=dict(color=COLORS["danger_dark"], width=2.5),
+                    text=[f"{v:.2f}" for v in longos["Reps_Dia"]],
+                    textposition="top center",
+                )
+            )
+            fig.update_layout(
+                **plot_layout("Internações longas · intensidade assistencial × desperdício", height=430),
+                xaxis=dict(title="Atendimento", type="category", tickangle=-35, showgrid=False),
+                yaxis=dict(title="Frequência diária", showgrid=True, gridcolor=COLORS["grid"]),
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Sem internações com pelo menos 7 dias e 20 exames no filtro atual.")
+
+    with st.expander("🔎 Buscar linha do tempo de um paciente", expanded=False):
+        atendimento_input = st.text_input("Código do atendimento", placeholder="Ex: 12335722")
+
+        if atendimento_input:
+            try:
+                atendimento_id = int(atendimento_input.strip())
+                p = df[df["Atendimento"] == atendimento_id].sort_values("DataHoraPedido").copy()
+
+                if p.empty:
+                    st.warning("Atendimento não encontrado dentro do filtro selecionado.")
+                else:
+                    info = pac[pac["Atendimento"] == atendimento_id].iloc[0]
+                    m1, m2, m3, m4 = st.columns(4)
+                    m1.metric("Exames", format_int(info["Total"]))
+                    m2.metric("% normal", format_pct(info["Pct_Normal"]))
+                    m3.metric("Repetições", format_int(info["Reps"]))
+                    m4.metric("Custo repetição", f'R$ {info["Custo_Rep"]:.2f}'.replace(".", ","))
+
+                    ordem = (
+                        p.groupby("Descrição Exame")["DataHoraPedido"]
+                        .min()
+                        .sort_values()
+                        .index
+                        .tolist()
+                    )
+                    mapa_y = {ex: i for i, ex in enumerate(ordem)}
+                    p["y_pos"] = p["Descrição Exame"].map(mapa_y)
+
+                    fig = go.Figure()
+
+                    for ex in ordem:
+                        sub = p[p["Descrição Exame"] == ex].sort_values("DataHoraPedido")
+                        if len(sub) > 1:
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=sub["DataHoraPedido"],
+                                    y=[mapa_y[ex]] * len(sub),
+                                    mode="lines",
+                                    line=dict(color="#DDE8E2", width=1.5),
+                                    hoverinfo="skip",
+                                    showlegend=False,
+                                )
+                            )
+
+                    normais_sub = p[p["Interpretação"] == "NORMAL"]
+                    alterados_sub = p[p["Interpretação"] != "NORMAL"]
+                    repetidos_sub = p[p["Flag_Rep"] == 1]
+
+                    if not normais_sub.empty:
+                        fig.add_trace(
+                            go.Scatter(
+                                x=normais_sub["DataHoraPedido"],
+                                y=normais_sub["y_pos"],
+                                mode="markers",
+                                name="Normal",
+                                marker=dict(size=10, color=COLORS["primary"], line=dict(color="white", width=1.4)),
+                                customdata=[x.title() for x in normais_sub["Descrição Exame"]],
+                                hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
+                            )
+                        )
+
+                    if not alterados_sub.empty:
+                        fig.add_trace(
+                            go.Scatter(
+                                x=alterados_sub["DataHoraPedido"],
+                                y=alterados_sub["y_pos"],
+                                mode="markers",
+                                name="Alterado",
+                                marker=dict(size=10, color=COLORS["deep"], line=dict(color="white", width=1.4)),
+                                customdata=[x.title() for x in alterados_sub["Descrição Exame"]],
+                                hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
+                            )
+                        )
+
+                    if not repetidos_sub.empty:
+                        fig.add_trace(
+                            go.Scatter(
+                                x=repetidos_sub["DataHoraPedido"],
+                                y=repetidos_sub["y_pos"],
+                                mode="markers",
+                                name="Repetição",
+                                marker=dict(size=18, color="rgba(0,0,0,0)", line=dict(color=COLORS["alert"], width=2.7)),
+                                customdata=[x.title() for x in repetidos_sub["Descrição Exame"]],
+                                hovertemplate="Repetição<br>%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
+                            )
+                        )
+
+                    fig.update_layout(
+                        **plot_layout(f"Linha do tempo · atendimento {atendimento_id}", height=max(300, len(ordem) * 28 + 110)),
+                        xaxis=dict(showgrid=True, gridcolor=COLORS["grid"], title=None),
+                        yaxis=dict(
+                            title=None,
+                            tickvals=list(range(len(ordem))),
+                            ticktext=[x.title() for x in ordem],
+                            showgrid=False,
+                        ),
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+
+            except ValueError:
+                st.error("Digite apenas números no código do atendimento.")
+
+
+# ============================================================
+# TAB 4 — MAPA INTEGRADO
+# ============================================================
+with tab4:
+    section_header("Priorização integrada por setor, exame e tempo")
+
+    c7, c8 = st.columns([1, 1])
+
+    with c7:
+        top_sv = df["Setor Solicitante"].value_counts().head(8).index
+        top_ev = df["Descrição Exame"].value_counts().head(top_n_exames).index
+
+        sub = df[
+            (df["Setor Solicitante"].isin(top_sv)) &
+            (df["Descrição Exame"].isin(top_ev))
+        ].copy()
+
+        piv_taxa = (
+            sub.groupby(["Setor Solicitante", "Descrição Exame"])["Flag_Rep"]
+            .mean()
+            .mul(100)
+            .round(1)
+            .unstack()
+        )
+
+        piv_custo = (
+            sub.groupby(["Setor Solicitante", "Descrição Exame"])["Custo_Rep"]
+            .sum()
+            .round(0)
+            .unstack()
+            .fillna(0)
+        )
+
+        annotations = []
+        for i in range(piv_taxa.shape[0]):
+            row = []
+            for j in range(piv_taxa.shape[1]):
+                taxa = piv_taxa.values[i, j]
+                custo = piv_custo.values[i, j]
+                if pd.isna(taxa):
+                    row.append("—")
+                else:
+                    row.append(f"{taxa:.0f}%\nR${custo:,.0f}")
+            annotations.append(row)
+
+        zmax_heat = 1
+        if not np.isnan(piv_taxa.values).all():
+            zmax_heat = max(np.nanmax(piv_taxa.values), 1)
+
+        fig = go.Figure(
+            go.Heatmap(
+                z=piv_taxa.values,
+                x=[truncate_text(x.title(), 22) for x in piv_taxa.columns],
+                y=[truncate_text(x, 24) for x in piv_taxa.index],
+                colorscale=[
+                    [0.00, "#EFF7F3"],
+                    [0.30, COLORS["support_mint"]],
+                    [0.55, COLORS["primary_light"]],
+                    [0.75, COLORS["alert"]],
+                    [1.00, COLORS["danger_dark"]],
+                ],
+                zmin=0,
+                zmax=zmax_heat,
+                text=annotations,
+                texttemplate="%{text}",
+                textfont=dict(size=9),
+                colorbar=dict(title="Taxa rep. %", ticksuffix="%"),
+                hovertemplate="<b>%{y}</b><br>%{x}<br>Taxa: %{z:.1f}%<extra></extra>",
             )
         )
 
         fig.update_layout(
-            **plot_layout("Internações longas · intensidade assistencial × desperdício", height=430),
-            xaxis=dict(
-                title="Atendimento",
-                type="category",
-                tickangle=-35,
-                showgrid=False,
-            ),
-            yaxis=dict(
-                title="Frequência diária",
-                showgrid=True,
-                gridcolor=COLORS["grid"],
-            ),
+            **plot_layout("Taxa de repetição e custo por setor × exame", height=410),
+            xaxis=dict(title=None, tickangle=-35),
+            yaxis=dict(title=None),
         )
         st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("Sem internações com pelo menos 7 dias e 20 exames no filtro atual.")
 
+    with c8:
+        piv_hora = (
+            df[df["Flag_Rep"] == 1]
+            .groupby(["DiaSemana", "Hora"])["Flag_Rep"]
+            .count()
+            .unstack(fill_value=0)
+            .reindex(columns=range(24), fill_value=0)
+        )
 
-# ============================================================
-# BUSCA DE PACIENTE
-# ============================================================
-with st.expander("🔎 Buscar linha do tempo de um paciente", expanded=False):
-    atendimento_input = st.text_input("Código do atendimento", placeholder="Ex: 12335722")
+        if not piv_hora.empty:
+            idx_presentes = list(piv_hora.index)
+            labels_dias = [DIAS_PT[i] for i in idx_presentes]
+            z_vals = piv_hora.values
+        else:
+            labels_dias = DIAS_PT
+            z_vals = np.zeros((7, 24))
 
-    if atendimento_input:
-        try:
-            atendimento_id = int(atendimento_input.strip())
-            p = df[df["Atendimento"] == atendimento_id].sort_values("DataHoraPedido").copy()
+        fig = go.Figure(
+            go.Heatmap(
+                z=z_vals,
+                x=[f"{h:02d}h" for h in range(24)],
+                y=labels_dias,
+                colorscale=[
+                    [0.00, "#F5FBF8"],
+                    [0.25, COLORS["support_ice"]],
+                    [0.55, COLORS["primary_light"]],
+                    [0.78, COLORS["alert"]],
+                    [1.00, COLORS["danger_dark"]],
+                ],
+                text=[[str(int(v)) if v > 0 else "" for v in row] for row in z_vals],
+                texttemplate="%{text}",
+                textfont=dict(size=9),
+                colorbar=dict(title="Nº rep."),
+                hovertemplate="%{y} · %{x}<br>%{z} repetições<extra></extra>",
+            )
+        )
 
-            if p.empty:
-                st.warning("Atendimento não encontrado dentro do filtro selecionado.")
-            else:
-                info = pac[pac["Atendimento"] == atendimento_id].iloc[0]
-                m1, m2, m3, m4 = st.columns(4)
-                m1.metric("Exames", format_int(info["Total"]))
-                m2.metric("% normal", format_pct(info["Pct_Normal"]))
-                m3.metric("Repetições", format_int(info["Reps"]))
-                m4.metric("Custo repetição", f'R$ {info["Custo_Rep"]:.2f}'.replace(".", ","))
+        for h in [8, 9, 19, 20]:
+            fig.add_vline(x=h - 0.5, line_dash="dash", line_color=COLORS["deep"], opacity=0.35)
 
-                ordem = (
-                    p.groupby("Descrição Exame")["DataHoraPedido"]
-                    .min()
-                    .sort_values()
-                    .index
-                    .tolist()
-                )
-                mapa_y = {ex: i for i, ex in enumerate(ordem)}
-                p["y_pos"] = p["Descrição Exame"].map(mapa_y)
+        fig.update_layout(
+            **plot_layout("Concentração temporal das repetições", height=410),
+            xaxis=dict(title=None),
+            yaxis=dict(title=None),
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
-                fig = go.Figure()
-
-                for ex in ordem:
-                    sub = p[p["Descrição Exame"] == ex].sort_values("DataHoraPedido")
-                    if len(sub) > 1:
-                        fig.add_trace(
-                            go.Scatter(
-                                x=sub["DataHoraPedido"],
-                                y=[mapa_y[ex]] * len(sub),
-                                mode="lines",
-                                line=dict(color="#DDE8E2", width=1.5),
-                                hoverinfo="skip",
-                                showlegend=False,
-                            )
-                        )
-
-                normais_sub = p[p["Interpretação"] == "NORMAL"]
-                alterados_sub = p[p["Interpretação"] != "NORMAL"]
-                repetidos_sub = p[p["Flag_Rep"] == 1]
-
-                if not normais_sub.empty:
-                    fig.add_trace(
-                        go.Scatter(
-                            x=normais_sub["DataHoraPedido"],
-                            y=normais_sub["y_pos"],
-                            mode="markers",
-                            name="Normal",
-                            marker=dict(
-                                size=10,
-                                color=COLORS["primary"],
-                                line=dict(color="white", width=1.4),
-                            ),
-                            customdata=[x.title() for x in normais_sub["Descrição Exame"]],
-                            hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
-                        )
-                    )
-
-                if not alterados_sub.empty:
-                    fig.add_trace(
-                        go.Scatter(
-                            x=alterados_sub["DataHoraPedido"],
-                            y=alterados_sub["y_pos"],
-                            mode="markers",
-                            name="Alterado",
-                            marker=dict(
-                                size=10,
-                                color=COLORS["deep"],
-                                line=dict(color="white", width=1.4),
-                            ),
-                            customdata=[x.title() for x in alterados_sub["Descrição Exame"]],
-                            hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
-                        )
-                    )
-
-                if not repetidos_sub.empty:
-                    fig.add_trace(
-                        go.Scatter(
-                            x=repetidos_sub["DataHoraPedido"],
-                            y=repetidos_sub["y_pos"],
-                            mode="markers",
-                            name="Repetição",
-                            marker=dict(
-                                size=18,
-                                color="rgba(0,0,0,0)",
-                                line=dict(color=COLORS["alert"], width=2.7),
-                            ),
-                            customdata=[x.title() for x in repetidos_sub["Descrição Exame"]],
-                            hovertemplate="Repetição<br>%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
-                        )
-                    )
-
-                fig.update_layout(
-                    **plot_layout(f"Linha do tempo · atendimento {atendimento_id}", height=max(300, len(ordem) * 28 + 110)),
-                    xaxis=dict(showgrid=True, gridcolor=COLORS["grid"], title=None),
-                    yaxis=dict(
-                        title=None,
-                        tickvals=list(range(len(ordem))),
-                        ticktext=[x.title() for x in ordem],
-                        showgrid=False,
-                    ),
-                )
-                st.plotly_chart(fig, use_container_width=True)
-
-        except ValueError:
-            st.error("Digite apenas números no código do atendimento.")
-
-
-# ============================================================
-# MÓDULO 4 — ANÁLISE INTEGRADA
-# ============================================================
-section_header("Módulo 4 · Mapa integrado de priorização")
-
-c7, c8 = st.columns([1, 1])
-
-with c7:
-    top_sv = df["Setor Solicitante"].value_counts().head(8).index
-    top_ev = df["Descrição Exame"].value_counts().head(10).index
-
-    sub = df[
-        (df["Setor Solicitante"].isin(top_sv)) &
-        (df["Descrição Exame"].isin(top_ev))
-    ].copy()
-
-    piv_taxa = (
-        sub.groupby(["Setor Solicitante", "Descrição Exame"])["Flag_Rep"]
-        .mean()
-        .mul(100)
-        .round(1)
-        .unstack()
+    combo = (
+        df.groupby(["Setor Solicitante", "Descrição Exame"])
+        .agg(
+            Total=("Flag_Normal", "count"),
+            Reps=("Flag_Rep", "sum"),
+            Custo_Rep=("Custo_Rep", "sum"),
+            Pct_Normal=("Flag_Normal", "mean"),
+        )
+        .reset_index()
     )
-
-    piv_custo = (
-        sub.groupby(["Setor Solicitante", "Descrição Exame"])["Custo_Rep"]
-        .sum()
-        .round(0)
-        .unstack()
-        .fillna(0)
-    )
-
-    annotations = []
-    for i in range(piv_taxa.shape[0]):
-        row = []
-        for j in range(piv_taxa.shape[1]):
-            taxa = piv_taxa.values[i, j]
-            custo = piv_custo.values[i, j]
-            if pd.isna(taxa):
-                row.append("—")
-            else:
-                row.append(f"{taxa:.0f}%\nR${custo:,.0f}")
-        annotations.append(row)
-
-    zmax_heat = 1
-    if not np.isnan(piv_taxa.values).all():
-        zmax_heat = max(np.nanmax(piv_taxa.values), 1)
+    combo = combo[combo["Total"] >= 10].copy()
+    combo["Taxa_Rep"] = (combo["Reps"] / combo["Total"] * 100).round(1)
+    combo["Pct_Normal"] = (combo["Pct_Normal"] * 100).round(1)
+    combo_plot = combo[combo["Reps"] >= 3].copy()
 
     fig = go.Figure(
-        go.Heatmap(
-            z=piv_taxa.values,
-            x=[truncate_text(x.title(), 22) for x in piv_taxa.columns],
-            y=[truncate_text(x, 24) for x in piv_taxa.index],
-            colorscale=[
-                [0.00, "#EFF7F3"],
-                [0.30, COLORS["support_mint"]],
-                [0.55, COLORS["primary_light"]],
-                [0.75, COLORS["alert"]],
-                [1.00, COLORS["danger_dark"]],
-            ],
-            zmin=0,
-            zmax=zmax_heat,
-            text=annotations,
-            texttemplate="%{text}",
-            textfont=dict(size=9),
-            colorbar=dict(title="Taxa rep. %", ticksuffix="%"),
-            hovertemplate="<b>%{y}</b><br>%{x}<br>Taxa: %{z:.1f}%<extra></extra>",
+        go.Scatter(
+            x=[truncate_text(x.title(), 20) for x in combo_plot["Descrição Exame"]],
+            y=[truncate_text(x, 22) for x in combo_plot["Setor Solicitante"]],
+            mode="markers",
+            marker=dict(
+                size=np.clip(combo_plot["Reps"] * 3 + 10, 10, 72),
+                color=color_scale_list(combo_plot["Taxa_Rep"], vmin=0, vmax=max(combo_plot["Taxa_Rep"].max(), 1) if not combo_plot.empty else 1),
+                opacity=0.82,
+                line=dict(color="white", width=0.9),
+            ),
+            customdata=np.stack([combo_plot["Taxa_Rep"], combo_plot["Reps"], combo_plot["Custo_Rep"]], axis=1) if not combo_plot.empty else None,
+            hovertemplate=(
+                "<b>%{y}</b><br>%{x}<br>"
+                "Taxa: %{customdata[0]:.1f}%<br>"
+                "Repetições: %{customdata[1]:,}<br>"
+                "Custo: R$ %{customdata[2]:,.0f}<extra></extra>"
+            ),
         )
     )
-
     fig.update_layout(
-        **plot_layout("Taxa de repetição e custo por setor × exame", height=400),
-        xaxis=dict(title=None, tickangle=-35),
-        yaxis=dict(title=None),
+        **plot_layout("Matriz de prioridade operacional", height=500),
+        xaxis=dict(title=None, tickangle=-38, showgrid=True, gridcolor=COLORS["grid"]),
+        yaxis=dict(title=None, showgrid=True, gridcolor=COLORS["grid"]),
     )
     st.plotly_chart(fig, use_container_width=True)
-
-with c8:
-    piv_hora = (
-        df[df["Flag_Rep"] == 1]
-        .groupby(["DiaSemana", "Hora"])["Flag_Rep"]
-        .count()
-        .unstack(fill_value=0)
-        .reindex(columns=range(24), fill_value=0)
-    )
-
-    if not piv_hora.empty:
-        idx_presentes = list(piv_hora.index)
-        labels_dias = [DIAS_PT[i] for i in idx_presentes]
-        z_vals = piv_hora.values
-    else:
-        labels_dias = DIAS_PT
-        z_vals = np.zeros((7, 24))
-
-    fig = go.Figure(
-        go.Heatmap(
-            z=z_vals,
-            x=[f"{h:02d}h" for h in range(24)],
-            y=labels_dias,
-            colorscale=[
-                [0.00, "#F5FBF8"],
-                [0.25, COLORS["support_ice"]],
-                [0.55, COLORS["primary_light"]],
-                [0.78, COLORS["alert"]],
-                [1.00, COLORS["danger_dark"]],
-            ],
-            text=[[str(int(v)) if v > 0 else "" for v in row] for row in z_vals],
-            texttemplate="%{text}",
-            textfont=dict(size=9),
-            colorbar=dict(title="Nº rep."),
-            hovertemplate="%{y} · %{x}<br>%{z} repetições<extra></extra>",
-        )
-    )
-
-    for h in [8, 9, 19, 20]:
-        fig.add_vline(x=h - 0.5, line_dash="dash", line_color=COLORS["deep"], opacity=0.35)
-
-    fig.update_layout(
-        **plot_layout("Concentração temporal das repetições", height=400),
-        xaxis=dict(title=None),
-        yaxis=dict(title=None),
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-combo = (
-    df.groupby(["Setor Solicitante", "Descrição Exame"])
-    .agg(
-        Total=("Flag_Normal", "count"),
-        Reps=("Flag_Rep", "sum"),
-        Custo_Rep=("Custo_Rep", "sum"),
-        Pct_Normal=("Flag_Normal", "mean"),
-    )
-    .reset_index()
-)
-combo = combo[combo["Total"] >= 10].copy()
-combo["Taxa_Rep"] = (combo["Reps"] / combo["Total"] * 100).round(1)
-combo["Pct_Normal"] = (combo["Pct_Normal"] * 100).round(1)
-combo_plot = combo[combo["Reps"] >= 3].copy()
-
-fig = go.Figure(
-    go.Scatter(
-        x=[truncate_text(x.title(), 20) for x in combo_plot["Descrição Exame"]],
-        y=[truncate_text(x, 22) for x in combo_plot["Setor Solicitante"]],
-        mode="markers",
-        marker=dict(
-            size=np.clip(combo_plot["Reps"] * 3 + 10, 10, 72),
-            color=color_scale_list(combo_plot["Taxa_Rep"], vmin=0, vmax=max(combo_plot["Taxa_Rep"].max(), 1) if not combo_plot.empty else 1),
-            opacity=0.82,
-            line=dict(color="white", width=0.9),
-        ),
-        customdata=np.stack([combo_plot["Taxa_Rep"], combo_plot["Reps"], combo_plot["Custo_Rep"]], axis=1) if not combo_plot.empty else None,
-        hovertemplate=(
-            "<b>%{y}</b><br>%{x}<br>"
-            "Taxa: %{customdata[0]:.1f}%<br>"
-            "Repetições: %{customdata[1]:,}<br>"
-            "Custo: R$ %{customdata[2]:,.0f}<extra></extra>"
-        ),
-    )
-)
-fig.update_layout(
-    **plot_layout("Matriz de prioridade operacional", height=500),
-    xaxis=dict(title=None, tickangle=-38, showgrid=True, gridcolor=COLORS["grid"]),
-    yaxis=dict(title=None, showgrid=True, gridcolor=COLORS["grid"]),
-)
-st.plotly_chart(fig, use_container_width=True)
 
 
 # ============================================================
@@ -1461,7 +1496,7 @@ st.markdown(
     """
     <div class="footer-note">
         Lab Vision · Hospital Unimed · Monitoramento de repetições laboratoriais ·
-        Painel redesenhado com foco em leitura executiva, priorização assistencial e impacto financeiro.
+        Painel refinado com foco em leitura executiva, priorização assistencial e impacto financeiro.
     </div>
     """,
     unsafe_allow_html=True,
