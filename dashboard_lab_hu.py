@@ -1276,205 +1276,204 @@ with tab3:
         if atendimento_input:
             try:
                 atendimento_id = int(atendimento_input.strip())
-                p = df[df["Atendimento"] == atendimento_id].sort_values("DataHoraPedido").copy()
-
-                if p.empty:
-                    st.warning("Atendimento não encontrado dentro do filtro selecionado.")
-                else:
-                    info = pac[pac["Atendimento"] == atendimento_id].iloc[0]
-
-                    # 1) Calcular dias de internação no período filtrado
-                    dt_min = p["DataHoraPedido"].min()
-                    dt_max = p["DataHoraPedido"].max()
-                    dias_internacao = max((dt_max - dt_min).days, 0)
-
-                    # 5 cards
-                    m1, m2, m3, m4, m5 = st.columns(5)
-                    m1.metric("Exames", format_int(info["Total"]))
-                    m2.metric("% normal", format_pct(info["Pct_Normal"]))
-                    m3.metric("Repetições", format_int(info["Reps"]))
-                    m4.metric("Custo repetição", f'R$ {info["Custo_Rep"]:.2f}'.replace(".", ","))
-                    m5.metric("Dias de Internação", format_int(dias_internacao))
-
-                    ordem = (
-                        p.groupby("Descrição Exame")["DataHoraPedido"]
-                        .min()
-                        .sort_values()
-                        .index
-                        .tolist()
-                    )
-                    mapa_y = {ex: i for i, ex in enumerate(ordem)}
-                    p["y_pos"] = p["Descrição Exame"].map(mapa_y)
-
-                    # ==========================================================
-                    # RESUMO POR EXAME PARA O EIXO DIREITO
-                    # ==========================================================
-                    resumo_exame = (
-                        p.groupby("Descrição Exame")
-                        .agg(
-                            Qtd_Exames=("Descrição Exame", "count"),
-                            Pct_Normal=("Flag_Normal", "mean"),
-                        )
-                        .reindex(ordem)
-                        .reset_index()
-                    )
-
-                    resumo_exame["Pct_Normal"] = (resumo_exame["Pct_Normal"] * 100).round(1)
-
-                    tickvals_right = [mapa_y[ex] for ex in ordem]
-                    ticktext_right = [
-                        f'{format_int(qtd)} | {format_pct(pct)}'
-                        for qtd, pct in zip(
-                            resumo_exame["Qtd_Exames"],
-                            resumo_exame["Pct_Normal"]
-                        )
-                    ]
-
-                    fig = go.Figure()
-
-                    for ex in ordem:
-                        sub = p[p["Descrição Exame"] == ex].sort_values("DataHoraPedido")
-                        if len(sub) > 1:
-                            fig.add_trace(
-                                go.Scatter(
-                                    x=sub["DataHoraPedido"],
-                                    y=[mapa_y[ex]] * len(sub),
-                                    mode="lines",
-                                    line=dict(color="#DDE8E2", width=1.5),
-                                    hoverinfo="skip",
-                                    showlegend=False,
-                                )
-                            )
-
-                    normais_sub = p[p["Interpretação"] == "NORMAL"]
-                    alterados_sub = p[p["Interpretação"] != "NORMAL"]
-                    repetidos_sub = p[p["Flag_Rep"] == 1]
-
-                    if not normais_sub.empty:
-                        fig.add_trace(
-                            go.Scatter(
-                                x=normais_sub["DataHoraPedido"],
-                                y=normais_sub["y_pos"],
-                                mode="markers",
-                                name="Normal",
-                                marker=dict(
-                                    size=10,
-                                    color=COLORS["primary"],
-                                    line=dict(color="white", width=1.4)
-                                ),
-                                customdata=[x.title() for x in normais_sub["Descrição Exame"]],
-                                hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
-                            )
-                        )
-
-                    if not alterados_sub.empty:
-                        fig.add_trace(
-                            go.Scatter(
-                                x=alterados_sub["DataHoraPedido"],
-                                y=alterados_sub["y_pos"],
-                                mode="markers",
-                                name="Alterado",
-                                marker=dict(
-                                    size=10,
-                                    color="#E24B4A",
-                                    line=dict(color="white", width=1.4)
-                                ),
-                                customdata=[x.title() for x in alterados_sub["Descrição Exame"]],
-                                hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
-                            )
-                        )
-
-                    if not repetidos_sub.empty:
-                        fig.add_trace(
-                            go.Scatter(
-                                x=repetidos_sub["DataHoraPedido"],
-                                y=repetidos_sub["y_pos"],
-                                mode="markers",
-                                name="Repetição",
-                                marker=dict(
-                                    size=18,
-                                    color="rgba(0,0,0,0)",
-                                    line=dict(color=COLORS["alert"], width=2.7)
-                                ),
-                                customdata=[x.title() for x in repetidos_sub["Descrição Exame"]],
-                                hovertemplate="Repetição<br>%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
-                            )
-                        )
-
-                    # Eixo X em português
-                    meses_pt = {
-                        1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr",
-                        5: "Mai", 6: "Jun", 7: "Jul", 8: "Ago",
-                        9: "Set", 10: "Out", 11: "Nov", 12: "Dez"
-                    }
-
-                    tick_dates = pd.date_range(
-                        start=p["DataHoraPedido"].min().normalize(),
-                        end=p["DataHoraPedido"].max().normalize(),
-                        freq="7D"
-                    )
-
-                    tick_text = [
-                        f"{d.day:02d}-{meses_pt[d.month]}"
-                        for d in tick_dates
-                    ]
-
-                    fig.update_layout(
-                        **plot_layout(
-                            title=None,
-                            height=max(320, len(ordem) * 30 + 150),
-                            legend=None,
-                            margin=dict(t=120, l=40, r=150, b=40)
-                        ),
-                        title=dict(
-                            text=f"Linha do tempo · atendimento {atendimento_id}",
-                            x=0.5,
-                            xanchor="center",
-                            y=0.98,
-                            yanchor="top",
-                            font=dict(size=16)
-                        ),
-                        legend=dict(
-                            orientation="h",
-                            x=0.5,
-                            xanchor="center",
-                            y=0.935,
-                            yanchor="top",
-                            bgcolor="rgba(0,0,0,0)",
-                            font=dict(size=11),
-                            traceorder="normal"
-                        ),
-                        xaxis=dict(
-                            showgrid=True,
-                            gridcolor=COLORS["grid"],
-                            title=None,
-                            tickmode="array",
-                            tickvals=tick_dates,
-                            ticktext=tick_text
-                        ),
-                        yaxis=dict(
-                            title=None,
-                            tickvals=list(range(len(ordem))),
-                            ticktext=[x.title() for x in ordem],
-                            showgrid=False,
-                        ),
-                        yaxis2=dict(
-                            title="Qtd | % Normal",
-                            titlefont=dict(size=11, color=COLORS["deep"]),
-                            tickvals=tickvals_right,
-                            ticktext=ticktext_right,
-                            overlaying="y",
-                            side="right",
-                            showgrid=False,
-                            ticks="",
-                            tickfont=dict(size=10, color=COLORS["deep"]),
-                        ),
-                    )
-
-                    st.plotly_chart(fig, use_container_width=True)
-
             except ValueError:
                 st.error("Digite apenas números no código do atendimento.")
+                st.stop()
+
+            p = df[df["Atendimento"] == atendimento_id].sort_values("DataHoraPedido").copy()
+
+            if p.empty:
+                st.warning("Atendimento não encontrado dentro do filtro selecionado.")
+            else:
+                info = pac[pac["Atendimento"] == atendimento_id].iloc[0]
+
+                # Dias de internação dentro do período filtrado
+                dt_min = p["DataHoraPedido"].min()
+                dt_max = p["DataHoraPedido"].max()
+                dias_internacao = max((dt_max - dt_min).days, 0)
+
+                # Cards resumo
+                m1, m2, m3, m4, m5 = st.columns(5)
+                m1.metric("Exames", format_int(info["Total"]))
+                m2.metric("% normal", format_pct(info["Pct_Normal"]))
+                m3.metric("Repetições", format_int(info["Reps"]))
+                m4.metric("Custo repetição", f'R$ {info["Custo_Rep"]:.2f}'.replace(".", ","))
+                m5.metric("Dias de Internação", format_int(dias_internacao))
+
+                # Ordem dos exames no eixo Y
+                ordem = (
+                    p.groupby("Descrição Exame")["DataHoraPedido"]
+                    .min()
+                    .sort_values()
+                    .index
+                    .tolist()
+                )
+                mapa_y = {ex: i for i, ex in enumerate(ordem)}
+                p["y_pos"] = p["Descrição Exame"].map(mapa_y)
+
+                # Resumo por exame para o eixo direito
+                resumo_exame = (
+                    p.groupby("Descrição Exame")
+                    .agg(
+                        Qtd_Exames=("Descrição Exame", "count"),
+                        Pct_Normal=("Flag_Normal", "mean"),
+                    )
+                    .reindex(ordem)
+                    .reset_index()
+                )
+                resumo_exame["Pct_Normal"] = (resumo_exame["Pct_Normal"] * 100).round(1)
+
+                tickvals_right = [mapa_y[ex] for ex in ordem]
+                ticktext_right = [
+                    f'{format_int(qtd)} | {format_pct(pct)}'
+                    for qtd, pct in zip(
+                        resumo_exame["Qtd_Exames"],
+                        resumo_exame["Pct_Normal"]
+                    )
+                ]
+
+                fig = go.Figure()
+
+                # Linhas de conexão por exame
+                for ex in ordem:
+                    sub = p[p["Descrição Exame"] == ex].sort_values("DataHoraPedido")
+                    if len(sub) > 1:
+                        fig.add_trace(
+                            go.Scatter(
+                                x=sub["DataHoraPedido"],
+                                y=[mapa_y[ex]] * len(sub),
+                                mode="lines",
+                                line=dict(color="#DDE8E2", width=1.5),
+                                hoverinfo="skip",
+                                showlegend=False,
+                            )
+                        )
+
+                normais_sub = p[p["Interpretação"] == "NORMAL"]
+                alterados_sub = p[p["Interpretação"] != "NORMAL"]
+                repetidos_sub = p[p["Flag_Rep"] == 1]
+
+                if not normais_sub.empty:
+                    fig.add_trace(
+                        go.Scatter(
+                            x=normais_sub["DataHoraPedido"],
+                            y=normais_sub["y_pos"],
+                            mode="markers",
+                            name="Normal",
+                            marker=dict(
+                                size=10,
+                                color=COLORS["primary"],
+                                line=dict(color="white", width=1.4)
+                            ),
+                            customdata=[x.title() for x in normais_sub["Descrição Exame"]],
+                            hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
+                        )
+                    )
+
+                if not alterados_sub.empty:
+                    fig.add_trace(
+                        go.Scatter(
+                            x=alterados_sub["DataHoraPedido"],
+                            y=alterados_sub["y_pos"],
+                            mode="markers",
+                            name="Alterado",
+                            marker=dict(
+                                size=10,
+                                color="#E24B4A",
+                                line=dict(color="white", width=1.4)
+                            ),
+                            customdata=[x.title() for x in alterados_sub["Descrição Exame"]],
+                            hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
+                        )
+                    )
+
+                if not repetidos_sub.empty:
+                    fig.add_trace(
+                        go.Scatter(
+                            x=repetidos_sub["DataHoraPedido"],
+                            y=repetidos_sub["y_pos"],
+                            mode="markers",
+                            name="Repetição",
+                            marker=dict(
+                                size=18,
+                                color="rgba(0,0,0,0)",
+                                line=dict(color=COLORS["alert"], width=2.7)
+                            ),
+                            customdata=[x.title() for x in repetidos_sub["Descrição Exame"]],
+                            hovertemplate="Repetição<br>%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
+                        )
+                    )
+
+                # Eixo X em português
+                meses_pt = {
+                    1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr",
+                    5: "Mai", 6: "Jun", 7: "Jul", 8: "Ago",
+                    9: "Set", 10: "Out", 11: "Nov", 12: "Dez"
+                }
+
+                tick_dates = pd.date_range(
+                    start=p["DataHoraPedido"].min().normalize(),
+                    end=p["DataHoraPedido"].max().normalize(),
+                    freq="7D"
+                )
+
+                tick_text = [f"{d.day:02d}-{meses_pt[d.month]}" for d in tick_dates]
+
+                fig.update_layout(
+                    **plot_layout(
+                        title=None,
+                        height=max(320, len(ordem) * 30 + 150),
+                        legend=None,
+                        margin=dict(t=125, l=40, r=170, b=40)
+                    ),
+                    title=dict(
+                        text=f"Linha do tempo · atendimento {atendimento_id}",
+                        x=0.5,
+                        xanchor="center",
+                        y=0.985,
+                        yanchor="top",
+                        font=dict(size=16)
+                    ),
+                    legend=dict(
+                        orientation="h",
+                        x=0.5,
+                        xanchor="center",
+                        y=0.94,
+                        yanchor="top",
+                        bgcolor="rgba(0,0,0,0)",
+                        font=dict(size=11),
+                        traceorder="normal"
+                    ),
+                    xaxis=dict(
+                        showgrid=True,
+                        gridcolor=COLORS["grid"],
+                        title=None,
+                        tickmode="array",
+                        tickvals=tick_dates,
+                        ticktext=tick_text
+                    ),
+                    yaxis=dict(
+                        title=None,
+                        tickvals=list(range(len(ordem))),
+                        ticktext=[x.title() for x in ordem],
+                        showgrid=False,
+                    ),
+                    yaxis2=dict(
+                        title=dict(
+                            text="Qtd exames | % normal",
+                            font=dict(size=11, color=COLORS["deep"])
+                        ),
+                        tickvals=tickvals_right,
+                        ticktext=ticktext_right,
+                        overlaying="y",
+                        side="right",
+                        showgrid=False,
+                        ticks="",
+                        tickfont=dict(size=10, color=COLORS["deep"]),
+                    ),
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
 
 # ============================================================
 # TAB 4 — MAPA INTEGRADO
