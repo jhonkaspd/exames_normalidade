@@ -1388,43 +1388,38 @@ with tab3:
 
                     fig.update_layout(
                         **plot_layout(
-                                height=max(300, len(ordem) * 28 + 130),
-                                legend=None
-                            ),
-
-                            title=dict(
-                                text=f"Linha do tempo · atendimento {atendimento_id}",
-                                x=0.5,
-                                xanchor="center"
-                            ),
-
-                            legend=dict(
-                                orientation="h",
-                                x=0.5,
-                                xanchor="center",
-                                y=1.04,
-                                yanchor="bottom",
-                                bgcolor="rgba(0,0,0,0)"
-                            ),
-
-                            xaxis=dict(
-                                showgrid=True,
-                                gridcolor=COLORS["grid"],
-                                title=None,
-                                tickmode="array",
-                                tickvals=tick_dates,
-                                ticktext=tick_text
-                            ),
-
-                            yaxis=dict(
-                                title=None,
-                                tickvals=list(range(len(ordem))),
-                                ticktext=[x.title() for x in ordem],
-                                showgrid=False,
-                            ),
-
+                            height=max(300, len(ordem) * 28 + 130),
+                            legend=None,
                             margin=dict(t=95, l=40, r=20, b=40)
+                        ),
+                        title=dict(
+                            text=f"Linha do tempo · atendimento {atendimento_id}",
+                            x=0.5,
+                            xanchor="center"
+                        ),
+                        legend=dict(
+                            orientation="h",
+                            x=0.5,
+                            xanchor="center",
+                            y=1.04,
+                            yanchor="bottom",
+                            bgcolor="rgba(0,0,0,0)"
+                        ),
+                        xaxis=dict(
+                            showgrid=True,
+                            gridcolor=COLORS["grid"],
+                            title=None,
+                            tickmode="array",
+                            tickvals=tick_dates,
+                            ticktext=tick_text
+                        ),
+                        yaxis=dict(
+                            title=None,
+                            tickvals=list(range(len(ordem))),
+                            ticktext=[x.title() for x in ordem],
+                            showgrid=False,
                         )
+                    )
 
                     st.plotly_chart(fig, use_container_width=True)
 
