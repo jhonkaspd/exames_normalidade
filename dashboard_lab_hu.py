@@ -449,7 +449,7 @@ def kpi_card(label, value, sub, accent, icon="•", fill=0.7, accent_2=None):
     """
 
 
-def plot_layout(title=None, height=380, legend=None, **kwargs):
+def plot_layout(title=None, height=380, legend="default", **kwargs):
     base = dict(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(255,255,255,0.76)",
@@ -464,7 +464,6 @@ def plot_layout(title=None, height=380, legend=None, **kwargs):
         ),
     )
 
-    # ✅ só adiciona título se existir
     if title is not None:
         base["title"] = dict(
             text=title,
@@ -472,7 +471,7 @@ def plot_layout(title=None, height=380, legend=None, **kwargs):
             font=dict(size=15, color=COLORS["deep"])
         )
 
-    if legend is None:
+    if legend == "default":
         base["legend"] = dict(
             orientation="h",
             yanchor="bottom",
@@ -481,7 +480,7 @@ def plot_layout(title=None, height=380, legend=None, **kwargs):
             x=0,
             bgcolor="rgba(0,0,0,0)",
         )
-    else:
+    elif legend is not None:
         base["legend"] = legend
 
     base.update(kwargs)
@@ -1388,42 +1387,44 @@ with tab3:
                     ]
 
                     fig.update_layout(
-                        **plot_layout(height=max(300, len(ordem) * 28 + 130)),
+                        **plot_layout(
+                                height=max(300, len(ordem) * 28 + 130),
+                                legend=None
+                            ),
 
-                        # ✅ título único e centralizado
-                        title=dict(
-                            text=f"Linha do tempo · atendimento {atendimento_id}",
-                            x=0.5,
-                            xanchor="center"
-                        ),
+                            title=dict(
+                                text=f"Linha do tempo · atendimento {atendimento_id}",
+                                x=0.5,
+                                xanchor="center"
+                            ),
 
-                        # ✅ legenda centralizada abaixo do título
-                        legend=dict(
-                            orientation="h",
-                            x=0.5,
-                            xanchor="center",
-                            y=1.05,
-                            yanchor="bottom"
-                        ),
+                            legend=dict(
+                                orientation="h",
+                                x=0.5,
+                                xanchor="center",
+                                y=1.04,
+                                yanchor="bottom",
+                                bgcolor="rgba(0,0,0,0)"
+                            ),
 
-                        xaxis=dict(
-                            showgrid=True,
-                            gridcolor=COLORS["grid"],
-                            title=None,
-                            tickmode="array",
-                            tickvals=tick_dates,
-                            ticktext=tick_text
-                        ),
+                            xaxis=dict(
+                                showgrid=True,
+                                gridcolor=COLORS["grid"],
+                                title=None,
+                                tickmode="array",
+                                tickvals=tick_dates,
+                                ticktext=tick_text
+                            ),
 
-                        yaxis=dict(
-                            title=None,
-                            tickvals=list(range(len(ordem))),
-                            ticktext=[x.title() for x in ordem],
-                            showgrid=False,
-                        ),
+                            yaxis=dict(
+                                title=None,
+                                tickvals=list(range(len(ordem))),
+                                ticktext=[x.title() for x in ordem],
+                                showgrid=False,
+                            ),
 
-                        margin=dict(t=90)  # espaço para título + legenda
-                    )
+                            margin=dict(t=95, l=40, r=20, b=40)
+                        )
 
                     st.plotly_chart(fig, use_container_width=True)
 
