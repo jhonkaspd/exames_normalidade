@@ -1,24 +1,3 @@
-"""
-╔══════════════════════════════════════════════════════════════════════╗
-║  DASHBOARD — MONITORAMENTO LABORATORIAL                           ║
-║  App Streamlit completo com filtro por setor                         ║
-║                                                                      ║
-║  EXECUÇÃO LOCAL:                                                     ║
-║    pip install streamlit pandas numpy plotly openpyxl matplotlib     ║
-║    streamlit run dashboard_lab_hu.py                                 ║
-║                                                                       ║
-║  COMPARTILHAR VIA STREAMLIT COMMUNITY CLOUD:                         ║
-║    1. Suba este arquivo + dados_lab_hu.xlsx no GitHub                ║
-║    2. Acesse share.streamlit.io → conecte o repositório              ║
-║    3. Gere o link e compartilhe com a equipe                         ║
-║                                                                      ║
-║  PARA LER DO GOOGLE DRIVE (opcional):                                ║
-║    Substitua a função carregar_dados() pela versão                   ║
-║    com gspread + service_account ao final deste arquivo.             ║
-╚══════════════════════════════════════════════════════════════════════╝
-"""
-
-
 # dashboard_lab_hu.py
 # ============================================================
 # DASHBOARD — MONITORAMENTO LABORATORIAL HU
@@ -48,28 +27,26 @@ st.set_page_config(
 
 # ============================================================
 # PALETA INSTITUCIONAL UNIMED
-# Baseada na paleta enviada
 # ============================================================
 COLORS = {
-    # primárias
-    "primary": "#00995D",        # verde institucional
-    "primary_light": "#B6D44C",  # verde lima
-    "deep": "#004B52",           # petróleo
-    "alert": "#F47920",          # laranja
-    # apoio
+    "primary": "#00995D",
+    "primary_light": "#B6D44C",
+    "deep": "#004B52",
+    "alert": "#F47920",
+
     "support_rose": "#C59A8B",
     "support_blush": "#E5C6C0",
     "support_sand": "#D5CEC2",
     "support_warm": "#F4E2B1",
     "support_mint": "#C1D0B9",
     "support_ice": "#C7DEE2",
-    # funcionais
+
     "danger": "#C94F4F",
     "danger_dark": "#8F2D2D",
     "warning": "#F0B24A",
     "success": "#00995D",
     "info": "#2E7D8A",
-    # fundos
+
     "bg": "#F4F8F6",
     "surface": "#FFFFFF",
     "surface_soft": "#EEF5F1",
@@ -114,8 +91,7 @@ def inject_css():
         }}
 
         [data-testid="stSidebar"] {{
-            background:
-                linear-gradient(180deg, #0A3E3D 0%, #063434 100%);
+            background: linear-gradient(180deg, #0A3E3D 0%, #063434 100%);
             border-right: 1px solid rgba(255,255,255,0.08);
         }}
 
@@ -216,15 +192,6 @@ def inject_css():
             text-transform: uppercase;
             letter-spacing: 0.12em;
             color: {COLORS["deep"]};
-        }}
-
-        .glass-card {{
-            background: rgba(255,255,255,0.84);
-            border: 1px solid rgba(0,75,82,0.08);
-            box-shadow: 0 12px 30px rgba(0, 75, 82, 0.06);
-            border-radius: 22px;
-            padding: 1rem 1rem 0.7rem 1rem;
-            backdrop-filter: blur(8px);
         }}
 
         .kpi-card {{
@@ -393,7 +360,7 @@ def kpi_card(label, value, sub, accent, icon="•", fill=0.7, accent_2=None):
     """
 
 
-def plot_layout(title, height=380, **kwargs):
+def plot_layout(title, height=380, legend=None, **kwargs):
     base = dict(
         title=dict(text=title, x=0, font=dict(size=15, color=COLORS["deep"])),
         paper_bgcolor="rgba(0,0,0,0)",
@@ -407,26 +374,25 @@ def plot_layout(title, height=380, **kwargs):
             font_size=12,
             font_family="Inter, sans-serif",
         ),
-        legend=dict(
+    )
+
+    if legend is None:
+        base["legend"] = dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="left",
             x=0,
             bgcolor="rgba(0,0,0,0)",
-        ),
-    )
+        )
+    else:
+        base["legend"] = legend
+
     base.update(kwargs)
     return base
 
 
 def color_scale(value, vmin=0, vmax=100):
-    """
-    Escala institucional:
-    baixo = verde claro
-    médio = laranja
-    alto = vermelho
-    """
     import matplotlib.colors as mcolors
     import matplotlib as mpl
 
@@ -891,6 +857,7 @@ with c3:
 with c4:
     bins = [0, 6, 12, 24, 48, 72, 168, 9999]
     labels = ["<6h", "6–12h", "12–24h", "24–48h", "48–72h", "3–7d", ">7d"]
+
     if not rep_df.empty:
         rep_df["Faixa"] = pd.cut(rep_df["Horas_Desde_Anterior"], bins=bins, labels=labels, right=False)
         dist = rep_df["Faixa"].value_counts().reindex(labels).fillna(0).astype(int)
@@ -968,8 +935,21 @@ fig.add_trace(
 fig.add_vline(x=x_med, line_dash="dot", line_color=COLORS["deep"], opacity=0.45)
 fig.add_hline(y=y_med, line_dash="dot", line_color=COLORS["deep"], opacity=0.45)
 
-fig.add_annotation(x=x_med * 0.45, y=y_med * 0.45, text="Menor prioridade", showarrow=False, font=dict(size=11, color=COLORS["muted"]))
-fig.add_annotation(x=max(setor_rep["Reps"].max() * 0.82, x_med + 1), y=max(setor_rep["Taxa_Rep"].max() * 0.92, y_med + 0.2), text="Alta prioridade", showarrow=False, font=dict(size=11, color=COLORS["danger_dark"]))
+fig.add_annotation(
+    x=x_med * 0.45 if x_med > 0 else 0.5,
+    y=y_med * 0.45 if y_med > 0 else 0.5,
+    text="Menor prioridade",
+    showarrow=False,
+    font=dict(size=11, color=COLORS["muted"]),
+)
+
+fig.add_annotation(
+    x=max(setor_rep["Reps"].max() * 0.82, x_med + 1) if not setor_rep.empty else 1,
+    y=max(setor_rep["Taxa_Rep"].max() * 0.92, y_med + 0.2) if not setor_rep.empty else 1,
+    text="Alta prioridade",
+    showarrow=False,
+    font=dict(size=11, color=COLORS["danger_dark"]),
+)
 
 fig.update_layout(
     **plot_layout("Setores prioritários · volume × taxa × custo", height=390),
@@ -1069,10 +1049,18 @@ with c5:
     fig.add_hline(y=40, line_dash="dot", line_color=COLORS["danger"], opacity=0.65)
 
     fig.update_layout(
-        **plot_layout("Perfil da população internada", height=410),
+        **plot_layout(
+            "Perfil da população internada",
+            height=410,
+            legend=dict(
+                orientation="v",
+                x=1.01,
+                y=0.5,
+                bgcolor="rgba(0,0,0,0)",
+            ),
+        ),
         xaxis=dict(title="Dias de internação", showgrid=True, gridcolor=COLORS["grid"]),
         yaxis=dict(title="Taxa de normalidade (%)", ticksuffix="%", showgrid=True, gridcolor=COLORS["grid"]),
-        legend=dict(orientation="v", x=1.01, y=0.5, bgcolor="rgba(0,0,0,0)"),
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -1279,6 +1267,10 @@ with c7:
                 row.append(f"{taxa:.0f}%\nR${custo:,.0f}")
         annotations.append(row)
 
+    zmax_heat = 1
+    if not np.isnan(piv_taxa.values).all():
+        zmax_heat = max(np.nanmax(piv_taxa.values), 1)
+
     fig = go.Figure(
         go.Heatmap(
             z=piv_taxa.values,
@@ -1292,7 +1284,7 @@ with c7:
                 [1.00, COLORS["danger_dark"]],
             ],
             zmin=0,
-            zmax=max(np.nanmax(piv_taxa.values) if not np.isnan(piv_taxa.values).all() else 1, 1),
+            zmax=zmax_heat,
             text=annotations,
             texttemplate="%{text}",
             textfont=dict(size=9),
@@ -1320,12 +1312,14 @@ with c8:
     if not piv_hora.empty:
         idx_presentes = list(piv_hora.index)
         labels_dias = [DIAS_PT[i] for i in idx_presentes]
+        z_vals = piv_hora.values
     else:
         labels_dias = DIAS_PT
+        z_vals = np.zeros((7, 24))
 
     fig = go.Figure(
         go.Heatmap(
-            z=piv_hora.values if not piv_hora.empty else np.zeros((7, 24)),
+            z=z_vals,
             x=[f"{h:02d}h" for h in range(24)],
             y=labels_dias,
             colorscale=[
@@ -1335,10 +1329,7 @@ with c8:
                 [0.78, COLORS["alert"]],
                 [1.00, COLORS["danger_dark"]],
             ],
-            text=[
-                [str(int(v)) if v > 0 else "" for v in row]
-                for row in (piv_hora.values if not piv_hora.empty else np.zeros((7, 24)))
-            ],
+            text=[[str(int(v)) if v > 0 else "" for v in row] for row in z_vals],
             texttemplate="%{text}",
             textfont=dict(size=9),
             colorbar=dict(title="Nº rep."),
@@ -1378,11 +1369,11 @@ fig = go.Figure(
         mode="markers",
         marker=dict(
             size=np.clip(combo_plot["Reps"] * 3 + 10, 10, 72),
-            color=color_scale_list(combo_plot["Taxa_Rep"], vmin=0, vmax=max(combo_plot["Taxa_Rep"].max(), 1)),
+            color=color_scale_list(combo_plot["Taxa_Rep"], vmin=0, vmax=max(combo_plot["Taxa_Rep"].max(), 1) if not combo_plot.empty else 1),
             opacity=0.82,
             line=dict(color="white", width=0.9),
         ),
-        customdata=np.stack([combo_plot["Taxa_Rep"], combo_plot["Reps"], combo_plot["Custo_Rep"]], axis=1),
+        customdata=np.stack([combo_plot["Taxa_Rep"], combo_plot["Reps"], combo_plot["Custo_Rep"]], axis=1) if not combo_plot.empty else None,
         hovertemplate=(
             "<b>%{y}</b><br>%{x}<br>"
             "Taxa: %{customdata[0]:.1f}%<br>"
@@ -1403,7 +1394,7 @@ st.plotly_chart(fig, use_container_width=True)
 # RODAPÉ
 # ============================================================
 st.markdown(
-    f"""
+    """
     <div class="footer-note">
         Lab Vision · Hospital Unimed · Monitoramento de repetições laboratoriais ·
         Painel redesenhado com foco em leitura executiva, priorização assistencial e impacto financeiro.
