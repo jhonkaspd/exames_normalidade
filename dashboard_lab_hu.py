@@ -1,9 +1,400 @@
-# dashboard_lab_hu.py
+import warnings
+warnings.filterwarnings("ignore")
+
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
+
+
 # ============================================================
-# LAB VISION | HU
-# Monitoramento de Repetições Desnecessárias de Exames
-# Versão refinada — visual executivo / institucional Unimed
+# CONFIGURAÇÃO DA PÁGINA
 # ============================================================
+st.set_page_config(
+    page_title="Lab Vision | HU",
+    page_icon="🧪",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+
+# ============================================================
+# PALETA
+# ============================================================
+COLORS = {
+    "primary": "#00995D",
+    "primary_light": "#B6D44C",
+    "deep": "#004B52",
+    "alert": "#F47920",
+
+    "support_rose": "#C59A8B",
+    "support_blush": "#E5C6C0",
+    "support_sand": "#D5CEC2",
+    "support_warm": "#F4E2B1",
+    "support_mint": "#C1D0B9",
+    "support_ice": "#C7DEE2",
+
+    "danger": "#C94F4F",
+    "danger_dark": "#8F2D2D",
+    "warning": "#F0B24A",
+    "success": "#00995D",
+    "info": "#2E7D8A",
+
+    "bg": "#F4F8F6",
+    "surface": "#FFFFFF",
+    "surface_soft": "#EEF5F1",
+    "surface_deep": "#073B3A",
+    "border": "#D8E4DD",
+    "text": "#18302B",
+    "muted": "#6B7D76",
+    "grid": "#E8EFEB",
+    "white": "#FFFFFF",
+}
+
+DIAS_PT = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
+MESES_PT = {
+    1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr", 5: "Mai", 6: "Jun",
+    7: "Jul", 8: "Ago", 9: "Set", 10: "Out", 11: "Nov", 12: "Dez"
+}
+
+
+# ============================================================
+# CSS
+# ============================================================
+def inject_css():
+    st.markdown(
+        f"""
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+        html, body, [class*="css"] {{
+            font-family: 'Inter', sans-serif;
+            color: {COLORS["text"]};
+        }}
+
+        .stApp {{
+            background:
+                radial-gradient(circle at top right, rgba(182,212,76,0.10), transparent 24%),
+                radial-gradient(circle at top left, rgba(0,153,93,0.08), transparent 28%),
+                linear-gradient(180deg, #F7FBF8 0%, #F2F7F4 100%);
+        }}
+
+        .block-container {{
+            max-width: 1580px;
+            padding-top: 1.1rem;
+            padding-bottom: 2rem;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }}
+
+        [data-testid="stSidebar"] {{
+            background: linear-gradient(180deg, #083A39 0%, #052F2F 100%) !important;
+            border-right: 2px solid rgba(255,255,255,0.14);
+            min-width: 325px !important;
+            box-shadow: 8px 0 26px rgba(0,0,0,0.18);
+        }}
+
+        [data-testid="stSidebar"] > div:first-child {{
+            background: linear-gradient(180deg, #083A39 0%, #052F2F 100%) !important;
+        }}
+
+        [data-testid="stSidebar"] * {{
+            color: #ECF8F2 !important;
+        }}
+
+        [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] > div,
+        [data-testid="stSidebar"] .stMultiSelect div[data-baseweb="select"] > div,
+        [data-testid="stSidebar"] [data-baseweb="input"] > div {{
+            background-color: rgba(255,255,255,0.08) !important;
+            border: 1px solid rgba(255,255,255,0.16) !important;
+            border-radius: 14px;
+        }}
+
+        [data-testid="stSidebar"] input {{
+            color: white !important;
+        }}
+
+        [data-testid="stSidebar"] .stDateInput {{
+            width: 100%;
+        }}
+
+        [data-testid="stSidebar"] .stDateInput > div {{
+            width: 100%;
+        }}
+
+        [data-testid="stSidebar"] .stDateInput > div > div {{
+            background-color: rgba(255,255,255,0.08) !important;
+            border: 1px solid rgba(255,255,255,0.16) !important;
+            border-radius: 14px;
+            min-height: 42px;
+        }}
+
+        #MainMenu, footer, header {{
+            visibility: hidden;
+        }}
+
+        .hero {{
+            position: relative;
+            overflow: hidden;
+            background:
+                linear-gradient(135deg, rgba(0,75,82,0.98) 0%, rgba(0,153,93,0.94) 58%, rgba(182,212,76,0.88) 100%);
+            border-radius: 26px;
+            padding: 1.5rem 1.6rem 1.5rem 1.6rem;
+            box-shadow: 0 16px 40px rgba(0, 75, 82, 0.18);
+            border: 1px solid rgba(255,255,255,0.14);
+            margin-bottom: 1rem;
+        }}
+
+        .hero:before {{
+            content: "";
+            position: absolute;
+            right: -30px;
+            top: -30px;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            filter: blur(5px);
+        }}
+
+        .hero-title {{
+            color: white;
+            font-size: 1.9rem;
+            font-weight: 800;
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.25rem;
+        }}
+
+        .hero-sub {{
+            color: rgba(255,255,255,0.90);
+            font-size: 0.97rem;
+            line-height: 1.5;
+            margin-bottom: 0.9rem;
+            max-width: 980px;
+        }}
+
+        .hero-badges {{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }}
+
+        .badge {{
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.42rem 0.78rem;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.14);
+            color: white;
+            font-size: 0.77rem;
+            font-weight: 700;
+            border: 1px solid rgba(255,255,255,0.14);
+            backdrop-filter: blur(6px);
+        }}
+
+        .section-title {{
+            margin-top: 0.9rem;
+            margin-bottom: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }}
+
+        .section-title .dot {{
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, {COLORS["primary"]}, {COLORS["primary_light"]});
+            box-shadow: 0 0 0 4px rgba(0,153,93,0.10);
+        }}
+
+        .section-title .text {{
+            font-size: 0.83rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: {COLORS["deep"]};
+        }}
+
+        .caption-box {{
+            background: linear-gradient(180deg, rgba(193,208,185,0.22), rgba(255,255,255,0.76));
+            border: 1px solid {COLORS["border"]};
+            padding: 0.8rem 0.95rem;
+            border-radius: 16px;
+            color: {COLORS["muted"]};
+            font-size: 0.82rem;
+            margin-bottom: 0.85rem;
+        }}
+
+        .kpi-card {{
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(180deg, rgba(255,255,255,0.99) 0%, rgba(248,252,249,0.98) 100%);
+            border: 1px solid {COLORS["border"]};
+            border-radius: 22px;
+            padding: 1rem 1.05rem 0.95rem 1.05rem;
+            min-height: 138px;
+            box-shadow: 0 12px 26px rgba(0,75,82,0.07);
+        }}
+
+        .kpi-card:before {{
+            content: "";
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 6px;
+            background: var(--accent);
+        }}
+
+        .kpi-top {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.55rem;
+        }}
+
+        .kpi-icon {{
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            background: var(--accent-soft);
+        }}
+
+        .kpi-label {{
+            font-size: 0.74rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: {COLORS["muted"]};
+        }}
+
+        .kpi-value {{
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.72rem;
+            font-weight: 800;
+            color: var(--accent);
+            line-height: 1.0;
+            margin-bottom: 0.35rem;
+        }}
+
+        .kpi-sub {{
+            font-size: 0.82rem;
+            color: {COLORS["muted"]};
+            line-height: 1.35;
+            min-height: 40px;
+        }}
+
+        .kpi-bar {{
+            margin-top: 0.65rem;
+            height: 8px;
+            border-radius: 999px;
+            background: #EAF2EE;
+            overflow: hidden;
+        }}
+
+        .kpi-fill {{
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        }}
+
+        .info-note {{
+            background: rgba(255,255,255,0.82);
+            border: 1px solid {COLORS["border"]};
+            border-left: 4px solid {COLORS["deep"]};
+            border-radius: 14px;
+            padding: 0.75rem 0.9rem;
+            color: {COLORS["muted"]};
+            font-size: 0.80rem;
+            line-height: 1.55;
+            margin-top: 0.35rem;
+            margin-bottom: 0.6rem;
+        }}
+
+        .insight-card {{
+            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(243,249,245,0.96));
+            border: 1px solid {COLORS["border"]};
+            border-radius: 18px;
+            padding: 0.9rem 1rem;
+            box-shadow: 0 10px 24px rgba(0,75,82,0.05);
+            min-height: 125px;
+        }}
+
+        .insight-title {{
+            font-size: 0.76rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: {COLORS["deep"]};
+            margin-bottom: 0.45rem;
+        }}
+
+        .insight-text {{
+            font-size: 0.84rem;
+            line-height: 1.5;
+            color: {COLORS["muted"]};
+        }}
+
+        .footer-note {{
+            color: {COLORS["muted"]};
+            font-size: 0.75rem;
+            text-align: center;
+            padding-top: 1rem;
+            margin-top: 1rem;
+            border-top: 1px solid {COLORS["border"]};
+        }}
+
+        .chart-title-center {{
+            text-align: center;
+            font-weight: 800;
+            color: {COLORS["deep"]};
+            margin-top: 0.25rem;
+            margin-bottom: 0.15rem;
+            font-size: 1rem;
+        }}
+
+        div[data-testid="stMetric"] {{
+            background: rgba(255,255,255,0.84);
+            border: 1px solid {COLORS["border"]};
+            border-radius: 16px;
+            padding: 0.75rem 0.9rem;
+        }}
+
+        div[data-testid="stExpander"] {{
+            border: 1px solid {COLORS["border"]};
+            border-radius: 18px;
+            background: rgba(255,255,255,0.76);
+        }}
+
+        .stTabs [data-baseweb="tab-list"] {{
+            gap: 8px;
+        }}
+
+        .stTabs [data-baseweb="tab"] {{
+            background: rgba(255,255,255,0.72);
+            border-radius: 14px;
+            border: 1px solid {COLORS["border"]};
+            padding: 10px 16px;
+            font-weight: 700;
+            color: {COLORS["deep"]};
+        }}
+
+        .stTabs [aria-selected="true"] {{
+            background: linear-gradient(180deg, rgba(0,153,93,0.10), rgba(182,212,76,0.12));
+            border-color: rgba(0,153,93,0.35);
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+inject_css()
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -403,160 +794,65 @@ def inject_css():
 
 inject_css()
 
-
 # ============================================================
-# FUNÇÕES AUXILIARES
+# DADOS
 # ============================================================
-def format_int(v):
-    return f"{int(v):,}".replace(",", ".")
+@st.cache_data(ttl=3600, show_spinner="Carregando dados laboratoriais...")
+def carregar_dados(path="dados_lab_hu.xlsx"):
+    df = pd.read_excel(path, sheet_name="data")
+    dim = pd.read_excel(path, sheet_name="dim_exames")
 
+    for col in ["Interpretação", "Descrição Exame", "Setor Solicitante", "Unidade"]:
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.strip().str.upper()
 
-def format_money(v):
-    return f"R$ {v:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    dim["Descrição Exame"] = dim["Descrição Exame"].astype(str).str.strip().str.upper()
 
+    df["DataHoraPedido"] = pd.to_datetime(df["DataHoraPedido"], errors="coerce")
+    df = df.dropna(subset=["DataHoraPedido"]).copy()
 
-def format_pct(v, nd=1):
-    if pd.isna(v):
-        v = 0
-    return f"{v:.{nd}f}%".replace(".", ",")
-
-
-def truncate_text(text, n=30):
-    text = str(text)
-    return text if len(text) <= n else text[: n - 1] + "…"
-
-
-def section_header(title):
-    st.markdown(
-        f"""
-        <div class="section-title">
-            <span class="dot"></span>
-            <span class="text">{title}</span>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    df["Data"] = df["DataHoraPedido"].dt.date
+    df["Hora"] = df["DataHoraPedido"].dt.hour
+    df["DiaSemana"] = df["DataHoraPedido"].dt.dayofweek
+    df["MesAno"] = df["DataHoraPedido"].dt.strftime("%m/%Y")
+    df["Turno"] = pd.cut(
+        df["Hora"],
+        bins=[-1, 6, 12, 18, 23],
+        labels=["Madrugada", "Manhã", "Tarde", "Noite"],
     )
 
+    custo_map = dict(zip(dim["Descrição Exame"], dim["CUSTO_EXAME"]))
+    intervalo_map = dict(zip(dim["Descrição Exame"], dim["INTERVALOS_CLINICOS"]))
 
-def info_note(text):
-    st.markdown(f"""<div class="info-note">{text}</div>""", unsafe_allow_html=True)
+    df["Custo_Unit"] = df["Descrição Exame"].map(custo_map).fillna(3.50)
+    df["Intervalo_Clinico_h"] = df["Descrição Exame"].map(intervalo_map).fillna(24)
 
+    df["Flag_Normal"] = (df["Interpretação"] == "NORMAL").astype(int)
+    df["Flag_Alterado"] = (df["Interpretação"] != "NORMAL").astype(int)
 
-def insight_card(title, text):
-    st.markdown(
-        f"""
-        <div class="insight-card">
-            <div class="insight-title">{title}</div>
-            <div class="insight-text">{text}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    df = df.sort_values(["Atendimento", "Descrição Exame", "DataHoraPedido"]).copy()
+    grp = df.groupby(["Atendimento", "Descrição Exame"], dropna=False)
 
+    df["Interp_Anterior"] = grp["Interpretação"].shift(1)
+    df["DataHora_Anterior"] = grp["DataHoraPedido"].shift(1)
+    df["Horas_Desde_Anterior"] = (
+        (df["DataHoraPedido"] - df["DataHora_Anterior"]).dt.total_seconds() / 3600
+    ).round(1)
 
-def kpi_card(label, value, sub, accent, icon="•", fill=0.7, accent_2=None):
-    accent_2 = accent_2 or COLORS["primary_light"]
-    accent_soft = f"{accent}22"
-    fill_pct = max(0, min(fill, 1)) * 100
-    return f"""
-    <div class="kpi-card" style="--accent:{accent}; --accent-2:{accent_2}; --accent-soft:{accent_soft}">
-        <div class="kpi-top">
-            <div class="kpi-label">{label}</div>
-            <div class="kpi-icon">{icon}</div>
-        </div>
-        <div class="kpi-value">{value}</div>
-        <div class="kpi-sub">{sub}</div>
-        <div class="kpi-bar">
-            <div class="kpi-fill" style="width:{fill_pct:.0f}%"></div>
-        </div>
-    </div>
-    """
+    df["Flag_Rep"] = (
+        (df["Interpretação"] == "NORMAL") &
+        (df["Interp_Anterior"] == "NORMAL")
+    ).astype(int)
 
+    df["Flag_Rep_Crit"] = (
+        (df["Flag_Rep"] == 1) &
+        (df["Horas_Desde_Anterior"] < df["Intervalo_Clinico_h"])
+    ).astype(int)
 
-def plot_layout(title, height=380, legend=None, **kwargs):
-    base = dict(
-        title=dict(text=title, x=0, font=dict(size=15, color=COLORS["deep"])),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(255,255,255,0.76)",
-        font=dict(family="Inter, sans-serif", size=12, color=COLORS["text"]),
-        margin=dict(l=8, r=8, t=50, b=8),
-        height=height,
-        hoverlabel=dict(
-            bgcolor=COLORS["deep"],
-            font_color=COLORS["white"],
-            font_size=12,
-            font_family="Inter, sans-serif",
-        ),
-    )
+    df["Flag_Rep_Alerta"] = ((df["Flag_Rep"] == 1) & (df["Flag_Rep_Crit"] == 0)).astype(int)
+    df["Custo_Rep"] = df["Custo_Unit"] * df["Flag_Rep"]
 
-    if legend is None:
-        base["legend"] = dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="left",
-            x=0,
-            bgcolor="rgba(0,0,0,0)",
-        )
-    else:
-        base["legend"] = legend
-
-    base.update(kwargs)
-    return base
-
-
-def color_scale(value, vmin=0, vmax=100):
-    import matplotlib.colors as mcolors
-    import matplotlib as mpl
-
-    cmap = mpl.colors.LinearSegmentedColormap.from_list(
-        "unimed_scale",
-        [COLORS["primary"], COLORS["primary_light"], COLORS["alert"], COLORS["danger_dark"]],
-    )
-    norm = mcolors.Normalize(vmin=vmin, vmax=max(vmax, vmin + 1e-9))
-    rgba = cmap(norm(value))
-    return mcolors.to_hex(rgba)
-
-
-def color_scale_list(values, vmin=0, vmax=100):
-    values = list(values)
-    if len(values) == 0:
-        return []
-    vmax = vmax if vmax is not None else max(values)
-    return [color_scale(v, vmin=vmin, vmax=vmax) for v in values]
-
-
-def format_date_pt(dt):
-    dt = pd.to_datetime(dt)
-    return f"{dt.day:02d}-{MESES_PT[dt.month]}"
-
-
-def build_pt_ticks(min_dt, max_dt, n_ticks=8):
-    min_dt = pd.to_datetime(min_dt).normalize()
-    max_dt = pd.to_datetime(max_dt).normalize()
-    if min_dt == max_dt:
-        return [min_dt], [format_date_pt(min_dt)]
-
-    total_days = max((max_dt - min_dt).days, 1)
-
-    if total_days <= 7:
-        freq = "D"
-    elif total_days <= 20:
-        freq = "2D"
-    elif total_days <= 45:
-        freq = "4D"
-    elif total_days <= 90:
-        freq = "7D"
-    else:
-        freq = "15D"
-
-    ticks = list(pd.date_range(min_dt, max_dt, freq=freq))
-    if ticks[-1] != max_dt:
-        ticks.append(max_dt)
-
-    labels = [format_date_pt(d) for d in ticks]
-    return ticks, labels
-
+    return df
 
 # ============================================================
 # DADOS
@@ -618,8 +914,7 @@ def carregar_dados(path="dados_lab_hu.xlsx"):
 
     return df
 
-
-# ============================================================
+    # ============================================================
 # SIDEBAR
 # ============================================================
 with st.sidebar:
@@ -753,7 +1048,6 @@ custo_rep_ano = custo_rep_mes * 12
 
 periodo_inicio = pd.to_datetime(df["DataHoraPedido"]).min()
 periodo_fim = pd.to_datetime(df["DataHoraPedido"]).max()
-
 
 # ============================================================
 # HERO
@@ -897,7 +1191,6 @@ tab1, tab2, tab3, tab4 = st.tabs(
     ["Visão geral", "Repetições", "Jornada do paciente", "Mapa integrado"]
 )
 
-
 # ============================================================
 # TAB 1 — VISÃO GERAL
 # ============================================================
@@ -1033,8 +1326,7 @@ with tab1:
     )
     st.plotly_chart(fig, use_container_width=True)
 
-
-# ============================================================
+    # ============================================================
 # TAB 2 — REPETIÇÕES
 # ============================================================
 with tab2:
@@ -1172,8 +1464,7 @@ with tab2:
     )
     st.plotly_chart(fig, use_container_width=True)
 
-
-# ============================================================
+    # ============================================================
 # TAB 3 — JORNADA
 # ============================================================
 with tab3:
@@ -1196,7 +1487,9 @@ with tab3:
     )
 
     pac["Pct_Normal"] = (pac["Pct_Normal"] * 100).round(1)
-    pac["Dias_Internacao"] = ((pac["Ultimo"] - pac["Primeiro"]).dt.total_seconds() / 86400).clip(lower=0).round(1)
+    pac["Dias_Internacao"] = (
+        (pac["Ultimo"] - pac["Primeiro"]).dt.total_seconds() / 86400
+    ).clip(lower=0).round(1)
     pac["Reps_Dia"] = (pac["Reps"] / pac["Dias_Internacao"].replace(0, 0.5)).round(2)
 
     def classificar_perfil(row):
@@ -1228,7 +1521,7 @@ with tab3:
 
     c5, c6 = st.columns([1.15, 0.85])
 
-    with c5:
+        with c5:
         fig = go.Figure()
         df_scatter = pac[pac["Dias_Internacao"] >= 1].copy()
 
@@ -1245,7 +1538,10 @@ with tab3:
                         opacity=0.75,
                         line=dict(color="white", width=0.9),
                     ),
-                    customdata=np.stack([grupo["Atendimento"], grupo["Reps"], grupo["Custo_Rep"]], axis=1),
+                    customdata=np.stack(
+                        [grupo["Atendimento"], grupo["Reps"], grupo["Custo_Rep"]],
+                        axis=1,
+                    ),
                     hovertemplate=(
                         "Atendimento: %{customdata[0]}<br>"
                         "Dias: %{x:.1f}<br>"
@@ -1263,10 +1559,24 @@ with tab3:
             **plot_layout(
                 "Perfil da população internada",
                 height=420,
-                legend=dict(orientation="v", x=1.01, y=0.5, bgcolor="rgba(0,0,0,0)"),
+                legend=dict(
+                    orientation="v",
+                    x=1.01,
+                    y=0.5,
+                    bgcolor="rgba(0,0,0,0)",
+                ),
             ),
-            xaxis=dict(title="Dias de internação", showgrid=True, gridcolor=COLORS["grid"]),
-            yaxis=dict(title="Taxa de normalidade (%)", ticksuffix="%", showgrid=True, gridcolor=COLORS["grid"]),
+            xaxis=dict(
+                title="Dias de internação",
+                showgrid=True,
+                gridcolor=COLORS["grid"],
+            ),
+            yaxis=dict(
+                title="Taxa de normalidade (%)",
+                ticksuffix="%",
+                showgrid=True,
+                gridcolor=COLORS["grid"],
+            ),
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -1280,7 +1590,7 @@ with tab3:
             "<br><b>Misto:</b> perfil intermediário, sem padrão dominante claro."
         )
 
-    with c6:
+            with c6:
         longos = pac[(pac["Dias_Internacao"] >= 7) & (pac["Total"] >= 20)].copy()
         longos = longos.sort_values("Reps", ascending=False).head(12)
 
@@ -1313,313 +1623,155 @@ with tab3:
                 )
             )
             fig.update_layout(
-                **plot_layout("Internações longas · intensidade assistencial × desperdício", height=430),
-                xaxis=dict(title="Atendimento", type="category", tickangle=-35, showgrid=False),
-                yaxis=dict(title="Frequência diária", showgrid=True, gridcolor=COLORS["grid"]),
+                **plot_layout(
+                    "Internações longas · intensidade assistencial × desperdício",
+                    height=430,
+                ),
+                xaxis=dict(
+                    title="Atendimento",
+                    type="category",
+                    tickangle=-35,
+                    showgrid=False,
+                ),
+                yaxis=dict(
+                    title="Frequência diária",
+                    showgrid=True,
+                    gridcolor=COLORS["grid"],
+                ),
             )
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Sem internações com pelo menos 7 dias e 20 exames no filtro atual.")
 
-with st.expander("🔎 Buscar linha do tempo de um paciente", expanded=False):
-    atendimento_input = st.text_input("Código do atendimento", placeholder="Ex: 12335722")
+    with st.expander("🔎 Buscar linha do tempo de um paciente", expanded=False):
+        atendimento_input = st.text_input(
+            "Código do atendimento",
+            placeholder="Ex: 12335722"
+        )
 
-    if atendimento_input:
-        atendimento_input = atendimento_input.strip()
+        if atendimento_input:
+            atendimento_input = atendimento_input.strip()
 
-        if not atendimento_input.isdigit():
-            st.error("Digite apenas números no código do atendimento.")
-        else:
-            atendimento_id = int(atendimento_input)
-
-            p = df[df["Atendimento"] == atendimento_id].sort_values("DataHoraPedido").copy()
-
-            if p.empty:
-                st.warning("Atendimento não encontrado dentro do filtro selecionado.")
+            if not atendimento_input.isdigit():
+                st.error("Digite apenas números no código do atendimento.")
             else:
-                info = pac[pac["Atendimento"] == atendimento_id].iloc[0]
-                dias_int = float(info["Dias_Internacao"]) if pd.notna(info["Dias_Internacao"]) else 0.0
+                atendimento_id = int(atendimento_input)
 
-                m1, m2, m3, m4, m5 = st.columns(5)
-                m1.metric("Exames", format_int(info["Total"]))
-                m2.metric("% normal", format_pct(info["Pct_Normal"]))
-                m3.metric("Repetições", format_int(info["Reps"]))
-                m4.metric("Custo repetição", f'R$ {info["Custo_Rep"]:.2f}'.replace(".", ","))
-                m5.metric("Dias de internação", f"{dias_int:.1f}".replace(".", ","))
+                p = df[df["Atendimento"] == atendimento_id].sort_values("DataHoraPedido").copy()
 
-                ordem = (
-                    p.groupby("Descrição Exame")["DataHoraPedido"]
-                    .min()
-                    .sort_values()
-                    .index
-                    .tolist()
-                )
-
-                if not ordem:
-                    st.warning("Não há exames suficientes para montar a linha do tempo.")
+                if p.empty:
+                    st.warning("Atendimento não encontrado dentro do filtro selecionado.")
                 else:
-                    mapa_y = {ex: i for i, ex in enumerate(ordem)}
-                    p["y_pos"] = p["Descrição Exame"].map(mapa_y)
+                    info = pac[pac["Atendimento"] == atendimento_id].iloc[0]
+                    dias_int = float(info["Dias_Internacao"]) if pd.notna(info["Dias_Internacao"]) else 0.0
 
-                    resumo_exame = (
-                        p.groupby("Descrição Exame")
-                        .agg(
-                            Total_Exames=("Descrição Exame", "count"),
-                            Pct_Normal=("Flag_Normal", "mean"),
-                        )
-                        .reindex(ordem)
-                        .reset_index()
+                    m1, m2, m3, m4, m5 = st.columns(5)
+                    m1.metric("Exames", format_int(info["Total"]))
+                    m2.metric("% normal", format_pct(info["Pct_Normal"]))
+                    m3.metric("Repetições", format_int(info["Reps"]))
+                    m4.metric("Custo repetição", f'R$ {info["Custo_Rep"]:.2f}'.replace(".", ","))
+                    m5.metric("Dias de internação", f"{dias_int:.1f}".replace(".", ","))
+
+                    ordem = (
+                        p.groupby("Descrição Exame")["DataHoraPedido"]
+                        .min()
+                        .sort_values()
+                        .index
+                        .tolist()
                     )
 
-                    resumo_exame["Total_Exames"] = resumo_exame["Total_Exames"].fillna(0)
-                    resumo_exame["Pct_Normal"] = (resumo_exame["Pct_Normal"].fillna(0) * 100).round(0)
+                    if not ordem:
+                        st.warning("Não há exames suficientes para montar a linha do tempo.")
+                    else:
+                        mapa_y = {ex: i for i, ex in enumerate(ordem)}
+                        p["y_pos"] = p["Descrição Exame"].map(mapa_y)
 
-                    resumo_exame["Resumo"] = resumo_exame.apply(
-                        lambda r: f"{int(r['Total_Exames'])} | {int(r['Pct_Normal'])}%",
-                        axis=1
-                    )
-
-                    tickvals_y = list(range(len(ordem)))
-                    ticktext_y_left = [e.title() for e in ordem]
-                    ticktext_y_right = resumo_exame["Resumo"].tolist()
-
-                    x_min = pd.to_datetime(p["DataHoraPedido"].min())
-                    x_max = pd.to_datetime(p["DataHoraPedido"].max())
-                    tickvals_x, ticktext_x = build_pt_ticks(x_min, x_max)
-
-                    st.markdown(
-                        f"""<div class="chart-title-center">Linha do tempo · atendimento {atendimento_id}</div>""",
-                        unsafe_allow_html=True,
-                    )
-
-                    fig = go.Figure()
-
-                    # Linhas por exame
-                    for ex in ordem:
-                        sub = p[p["Descrição Exame"] == ex].sort_values("DataHoraPedido")
-                        if len(sub) > 1:
-                            fig.add_trace(
-                                go.Scatter(
-                                    x=sub["DataHoraPedido"],
-                                    y=[mapa_y[ex]] * len(sub),
-                                    mode="lines",
-                                    line=dict(color="#DDE8E2", width=1.5),
-                                    hoverinfo="skip",
-                                    showlegend=False,
-                                )
+                        resumo_exame = (
+                            p.groupby("Descrição Exame")
+                            .agg(
+                                Total_Exames=("Descrição Exame", "count"),
+                                Pct_Normal=("Flag_Normal", "mean"),
                             )
-
-                    normais_sub = p[p["Interpretação"] == "NORMAL"]
-                    alterados_sub = p[p["Interpretação"] != "NORMAL"]
-                    repetidos_sub = p[p["Flag_Rep"] == 1]
-
-                    if not normais_sub.empty:
-                        fig.add_trace(
-                            go.Scatter(
-                                x=normais_sub["DataHoraPedido"],
-                                y=normais_sub["y_pos"],
-                                mode="markers",
-                                name="Normal",
-                                marker=dict(
-                                    size=9,
-                                    color=COLORS["primary"],
-                                    line=dict(color="white", width=1.3),
-                                ),
-                                customdata=np.stack(
-                                    [
-                                        normais_sub["Descrição Exame"].str.title(),
-                                        normais_sub["Horas_Desde_Anterior"].fillna(0),
-                                    ],
-                                    axis=1
-                                ),
-                                hovertemplate=(
-                                    "%{customdata[0]}<br>"
-                                    "%{x|%d/%m/%Y %H:%M}<br>"
-                                    "Horas desde anterior: %{customdata[1]:.1f}<extra></extra>"
-                                ),
-                            )
+                            .reindex(ordem)
+                            .reset_index()
                         )
 
-                    if not alterados_sub.empty:
-                        fig.add_trace(
-                            go.Scatter(
-                                x=alterados_sub["DataHoraPedido"],
-                                y=alterados_sub["y_pos"],
-                                mode="markers",
-                                name="Alterado",
-                                marker=dict(
-                                    size=9,
-                                    color=COLORS["danger"],
-                                    line=dict(color="white", width=1.3),
-                                ),
-                                customdata=np.stack(
-                                    [
-                                        alterados_sub["Descrição Exame"].str.title(),
-                                        alterados_sub["Horas_Desde_Anterior"].fillna(0),
-                                    ],
-                                    axis=1
-                                ),
-                                hovertemplate=(
-                                    "%{customdata[0]}<br>"
-                                    "%{x|%d/%m/%Y %H:%M}<br>"
-                                    "Horas desde anterior: %{customdata[1]:.1f}<extra></extra>"
-                                ),
-                            )
+                        resumo_exame["Total_Exames"] = resumo_exame["Total_Exames"].fillna(0)
+                        resumo_exame["Pct_Normal"] = (
+                            resumo_exame["Pct_Normal"].fillna(0) * 100
+                        ).round(0)
+
+                        resumo_exame["Resumo"] = resumo_exame.apply(
+                            lambda r: f"{int(r['Total_Exames'])} | {int(r['Pct_Normal'])}%",
+                            axis=1
                         )
 
-                    if not repetidos_sub.empty:
-                        fig.add_trace(
-                            go.Scatter(
-                                x=repetidos_sub["DataHoraPedido"],
-                                y=repetidos_sub["y_pos"],
-                                mode="markers",
-                                name="Repetição",
-                                marker=dict(
-                                    size=18,
-                                    color="rgba(0,0,0,0)",
-                                    line=dict(color=COLORS["alert"], width=2.5),
-                                ),
-                                customdata=np.stack(
-                                    [
-                                        repetidos_sub["Descrição Exame"].str.title(),
-                                        repetidos_sub["Horas_Desde_Anterior"].fillna(0),
-                                    ],
-                                    axis=1
-                                ),
-                                hovertemplate=(
-                                    "Repetição<br>"
-                                    "%{customdata[0]}<br>"
-                                    "%{x|%d/%m/%Y %H:%M}<br>"
-                                    "Horas desde anterior: %{customdata[1]:.1f}<extra></extra>"
-                                ),
-                            )
+                        tickvals_y = list(range(len(ordem)))
+                        ticktext_y_left = [e.title() for e in ordem]
+                        ticktext_y_right = resumo_exame["Resumo"].tolist()
+
+                        x_min = pd.to_datetime(p["DataHoraPedido"].min())
+                        x_max = pd.to_datetime(p["DataHoraPedido"].max())
+                        tickvals_x, ticktext_x = build_pt_ticks(x_min, x_max)
+
+                        st.markdown(
+                            f"""<div class="chart-title-center">Linha do tempo · atendimento {atendimento_id}</div>""",
+                            unsafe_allow_html=True,
                         )
 
-                    fig.update_layout(
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        plot_bgcolor="rgba(255,255,255,0.76)",
-                        font=dict(family="Inter, sans-serif", size=12, color=COLORS["text"]),
-                        margin=dict(l=8, r=8, t=75, b=8),
-                        height=max(340, len(ordem) * 28 + 130),
-                        hoverlabel=dict(
-                            bgcolor=COLORS["deep"],
-                            font_color=COLORS["white"],
-                            font_size=12,
-                            font_family="Inter, sans-serif",
-                        ),
-                        legend=dict(
-                            orientation="h",
-                            x=0.5,
-                            xanchor="center",
-                            y=1.03,
-                            yanchor="bottom",
-                            bgcolor="rgba(0,0,0,0)",
-                        ),
-                        xaxis=dict(
-                            title=None,
-                            showgrid=True,
-                            gridcolor=COLORS["grid"],
-                            tickmode="array",
-                            tickvals=tickvals_x,
-                            ticktext=ticktext_x,
-                        ),
-                        yaxis=dict(
-                            title=None,
-                            tickvals=tickvals_y,
-                            ticktext=ticktext_y_left,
-                            showgrid=False,
-                        ),
-                        yaxis2=dict(
-                            title="Qtde | % Normal",
-                            tickvals=tickvals_y,
-                            ticktext=ticktext_y_right,
-                            overlaying="y",
-                            side="right",
-                            showgrid=False,
-                            tickfont=dict(color=COLORS["muted"], size=10),
-                            titlefont=dict(color=COLORS["muted"], size=11),
-                        ),
-                    )
+                        fig = go.Figure()
 
-                    st.plotly_chart(fig, use_container_width=True)
+                        fig.update_layout(
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            plot_bgcolor="rgba(255,255,255,0.76)",
+                            font=dict(
+                                family="Inter, sans-serif",
+                                size=12,
+                                color=COLORS["text"]
+                            ),
+                            margin=dict(l=8, r=8, t=75, b=8),
+                            height=max(340, len(ordem) * 28 + 130),
+                            hoverlabel=dict(
+                                bgcolor=COLORS["deep"],
+                                font_color=COLORS["white"],
+                                font_size=12,
+                                font_family="Inter, sans-serif",
+                            ),
+                            legend=dict(
+                                orientation="h",
+                                x=0.5,
+                                xanchor="center",
+                                y=1.03,
+                                yanchor="bottom",
+                                bgcolor="rgba(0,0,0,0)",
+                            ),
+                            xaxis=dict(
+                                title=None,
+                                showgrid=True,
+                                gridcolor=COLORS["grid"],
+                                tickmode="array",
+                                tickvals=tickvals_x,
+                                ticktext=ticktext_x,
+                            ),
+                            yaxis=dict(
+                                title=None,
+                                tickvals=tickvals_y,
+                                ticktext=ticktext_y_left,
+                                showgrid=False,
+                            ),
+                            yaxis2=dict(
+                                title="Qtde | % Normal",
+                                tickvals=tickvals_y,
+                                ticktext=ticktext_y_right,
+                                overlaying="y",
+                                side="right",
+                                showgrid=False,
+                                tickfont=dict(color=COLORS["muted"], size=10),
+                                titlefont=dict(color=COLORS["muted"], size=11),
+                            ),
+                        )
 
-# ============================================================
-# TAB 4 — MAPA INTEGRADO
-# ============================================================
-with tab4:
-    section_header("Priorização integrada por setor, exame e tempo")
-
-    c7, c8 = st.columns([1, 1])
-
-    with c7:
-        top_sv = df["Setor Solicitante"].value_counts().head(8).index
-        top_ev = df["Descrição Exame"].value_counts().head(10).index
-
-        sub = df[
-            (df["Setor Solicitante"].isin(top_sv)) &
-            (df["Descrição Exame"].isin(top_ev))
-        ].copy()
-
-        piv_taxa = (
-            sub.groupby(["Setor Solicitante", "Descrição Exame"])["Flag_Rep"]
-            .mean()
-            .mul(100)
-            .round(1)
-            .unstack()
-        )
-
-        piv_custo = (
-            sub.groupby(["Setor Solicitante", "Descrição Exame"])["Custo_Rep"]
-            .sum()
-            .round(0)
-            .unstack()
-            .fillna(0)
-        )
-
-        annotations = []
-        for i in range(piv_taxa.shape[0]):
-            row = []
-            for j in range(piv_taxa.shape[1]):
-                taxa = piv_taxa.values[i, j]
-                custo = piv_custo.values[i, j]
-                if pd.isna(taxa):
-                    row.append("—")
-                else:
-                    row.append(f"{taxa:.0f}%\nR${custo:,.0f}")
-            annotations.append(row)
-
-        zmax_heat = 1
-        if not np.isnan(piv_taxa.values).all():
-            zmax_heat = max(np.nanmax(piv_taxa.values), 1)
-
-        fig = go.Figure(
-            go.Heatmap(
-                z=piv_taxa.values,
-                x=[truncate_text(x.title(), 22) for x in piv_taxa.columns],
-                y=[truncate_text(x, 24) for x in piv_taxa.index],
-                colorscale=[
-                    [0.00, "#EFF7F3"],
-                    [0.30, COLORS["support_mint"]],
-                    [0.55, COLORS["primary_light"]],
-                    [0.75, COLORS["alert"]],
-                    [1.00, COLORS["danger_dark"]],
-                ],
-                zmin=0,
-                zmax=zmax_heat,
-                text=annotations,
-                texttemplate="%{text}",
-                textfont=dict(size=9),
-                colorbar=dict(title="Taxa rep. %", ticksuffix="%"),
-                hovertemplate="<b>%{y}</b><br>%{x}<br>Taxa: %{z:.1f}%<extra></extra>",
-            )
-        )
-
-        fig.update_layout(
-            **plot_layout("Taxa de repetição e custo por setor × exame", height=410),
-            xaxis=dict(title=None, tickangle=-35),
-            yaxis=dict(title=None),
-        )
-        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, use_container_width=True)
 
     with c8:
         piv_hora = (
@@ -1690,11 +1842,18 @@ with tab4:
             mode="markers",
             marker=dict(
                 size=np.clip(combo_plot["Reps"] * 3 + 10, 10, 72),
-                color=color_scale_list(combo_plot["Taxa_Rep"], vmin=0, vmax=max(combo_plot["Taxa_Rep"].max(), 1) if not combo_plot.empty else 1),
+                color=color_scale_list(
+                    combo_plot["Taxa_Rep"],
+                    vmin=0,
+                    vmax=max(combo_plot["Taxa_Rep"].max(), 1) if not combo_plot.empty else 1,
+                ),
                 opacity=0.82,
                 line=dict(color="white", width=0.9),
             ),
-            customdata=np.stack([combo_plot["Taxa_Rep"], combo_plot["Reps"], combo_plot["Custo_Rep"]], axis=1) if not combo_plot.empty else None,
+            customdata=np.stack(
+                [combo_plot["Taxa_Rep"], combo_plot["Reps"], combo_plot["Custo_Rep"]],
+                axis=1,
+            ) if not combo_plot.empty else None,
             hovertemplate=(
                 "<b>%{y}</b><br>%{x}<br>"
                 "Taxa: %{customdata[0]:.1f}%<br>"
