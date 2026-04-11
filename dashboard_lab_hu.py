@@ -1267,11 +1267,19 @@ with tab3:
                     st.warning("Atendimento não encontrado dentro do filtro selecionado.")
                 else:
                     info = pac[pac["Atendimento"] == atendimento_id].iloc[0]
-                    m1, m2, m3, m4 = st.columns(4)
+
+                    # 1) Calcular dias de internação no período filtrado
+                    dt_min = p["DataHoraPedido"].min()
+                    dt_max = p["DataHoraPedido"].max()
+                    dias_internacao = max((dt_max - dt_min).days, 0)
+
+                    # 5 cards
+                    m1, m2, m3, m4, m5 = st.columns(5)
                     m1.metric("Exames", format_int(info["Total"]))
                     m2.metric("% normal", format_pct(info["Pct_Normal"]))
                     m3.metric("Repetições", format_int(info["Reps"]))
                     m4.metric("Custo repetição", f'R$ {info["Custo_Rep"]:.2f}'.replace(".", ","))
+                    m5.metric("Dias de Internação", format_int(dias_internacao))
 
                     ordem = (
                         p.groupby("Descrição Exame")["DataHoraPedido"]
@@ -1310,7 +1318,11 @@ with tab3:
                                 y=normais_sub["y_pos"],
                                 mode="markers",
                                 name="Normal",
-                                marker=dict(size=10, color=COLORS["primary"], line=dict(color="white", width=1.4)),
+                                marker=dict(
+                                    size=10,
+                                    color=COLORS["primary"],
+                                    line=dict(color="white", width=1.4)
+                                ),
                                 customdata=[x.title() for x in normais_sub["Descrição Exame"]],
                                 hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
                             )
@@ -1323,7 +1335,11 @@ with tab3:
                                 y=alterados_sub["y_pos"],
                                 mode="markers",
                                 name="Alterado",
-                                marker=dict(size=10, color=COLORS["deep"], line=dict(color="white", width=1.4)),
+                                marker=dict(
+                                    size=10,
+                                    color="#E24B4A",  # 3) vermelho
+                                    line=dict(color="white", width=1.4)
+                                ),
                                 customdata=[x.title() for x in alterados_sub["Descrição Exame"]],
                                 hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
                             )
@@ -1336,22 +1352,73 @@ with tab3:
                                 y=repetidos_sub["y_pos"],
                                 mode="markers",
                                 name="Repetição",
-                                marker=dict(size=18, color="rgba(0,0,0,0)", line=dict(color=COLORS["alert"], width=2.7)),
+                                marker=dict(
+                                    size=18,
+                                    color="rgba(0,0,0,0)",
+                                    line=dict(color=COLORS["alert"], width=2.7)
+                                ),
                                 customdata=[x.title() for x in repetidos_sub["Descrição Exame"]],
                                 hovertemplate="Repetição<br>%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
                             )
                         )
 
+                    # 4) Eixo X em português
+                    meses_pt = {
+                        1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr",
+                        5: "Mai", 6: "Jun", 7: "Jul", 8: "Ago",
+                        9: "Set", 10: "Out", 11: "Nov", 12: "Dez"
+                    }
+
+                    tick_dates = pd.date_range(
+                        start=p["DataHoraPedido"].min().normalize(),
+                        end=p["DataHoraPedido"].max().normalize(),
+                        freq="7D"
+                    )
+
+                    tick_text = [
+                        f"{d.day:02d}-{meses_pt[d.month]}"
+                        for d in tick_dates
+                    ]
+
                     fig.update_layout(
-                        **plot_layout(f"Linha do tempo · atendimento {atendimento_id}", height=max(300, len(ordem) * 28 + 110)),
-                        xaxis=dict(showgrid=True, gridcolor=COLORS["grid"], title=None),
+                        **plot_layout(
+                            f"Linha do tempo · atendimento {atendimento_id}",
+                            height=max(300, len(ordem) * 28 + 130)
+                        ),
+
+                        # 2) título centralizado e legenda centralizada abaixo dele
+                        title=dict(
+                            text=f"Linha do tempo · atendimento {atendimento_id}",
+                            x=0.5,
+                            xanchor="center"
+                        ),
+                        legend=dict(
+                            orientation="h",
+                            x=0.5,
+                            xanchor="center",
+                            y=1.04,
+                            yanchor="bottom"
+                        ),
+
+                        xaxis=dict(
+                            showgrid=True,
+                            gridcolor=COLORS["grid"],
+                            title=None,
+                            tickmode="array",
+                            tickvals=tick_dates,
+                            ticktext=tick_text
+                        ),
                         yaxis=dict(
                             title=None,
                             tickvals=list(range(len(ordem))),
                             ticktext=[x.title() for x in ordem],
                             showgrid=False,
                         ),
+
+                        # espaço extra no topo para evitar sobreposição
+                        margin=dict(t=95, l=40, r=20, b=40)
                     )
+
                     st.plotly_chart(fig, use_container_width=True)
 
             except ValueError:
