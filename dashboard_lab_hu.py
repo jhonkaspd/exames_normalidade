@@ -590,7 +590,6 @@ with st.sidebar:
     data_min = pd.to_datetime(df_raw["DataHoraPedido"]).min().date()
     data_max = pd.to_datetime(df_raw["DataHoraPedido"]).max().date()
 
-    # filtro cruzado
     unidades_all = sorted(df_raw["Unidade"].dropna().unique().tolist()) if "Unidade" in df_raw.columns else []
     unidade_sel = st.selectbox(
         "Unidade",
@@ -612,19 +611,30 @@ with st.sidebar:
     )
 
     st.markdown("<div style='height:0.35rem'></div>", unsafe_allow_html=True)
+    st.markdown("**Período**")
 
-    periodo_sel = st.date_input(
-        "Período",
-        value=(data_min, data_max),
-        min_value=data_min,
-        max_value=data_max,
-        format="DD/MM/YYYY",
-    )
+    col_dt1, col_dt2 = st.columns(2)
+    with col_dt1:
+        periodo_inicio_sel = st.date_input(
+            "Início",
+            value=data_min,
+            min_value=data_min,
+            max_value=data_max,
+            format="DD/MM/YYYY",
+            key="periodo_inicio_sidebar",
+        )
+    with col_dt2:
+        periodo_fim_sel = st.date_input(
+            "Fim",
+            value=data_max,
+            min_value=data_min,
+            max_value=data_max,
+            format="DD/MM/YYYY",
+            key="periodo_fim_sidebar",
+        )
 
-    if isinstance(periodo_sel, tuple) and len(periodo_sel) == 2:
-        periodo_inicio_sel, periodo_fim_sel = periodo_sel
-    else:
-        periodo_inicio_sel, periodo_fim_sel = data_min, data_max
+    if periodo_inicio_sel > periodo_fim_sel:
+        st.warning("A data inicial não pode ser maior que a data final.")
 
     st.markdown("---")
     st.markdown(
@@ -640,7 +650,6 @@ with st.sidebar:
         """,
         unsafe_allow_html=True,
     )
-
 
 # ============================================================
 # FILTROS
@@ -1404,7 +1413,7 @@ with tab3:
                             orientation="h",
                             x=0.5,
                             xanchor="center",
-                            y=0.92,              # ↓ mais abaixo do título
+                            y=0.95,              # ↓ mais abaixo do título
                             yanchor="top",
                             bgcolor="rgba(0,0,0,0)",
                             font=dict(size=11),
