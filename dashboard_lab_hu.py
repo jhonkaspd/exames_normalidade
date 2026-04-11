@@ -1395,15 +1395,20 @@ with tab3:
                         title=dict(
                             text=f"Linha do tempo · atendimento {atendimento_id}",
                             x=0.5,
-                            xanchor="center"
+                            xanchor="center",
+                            y=0.97,              # posição vertical
+                            yanchor="top",
+                            font=dict(size=16)
                         ),
                         legend=dict(
                             orientation="h",
                             x=0.5,
                             xanchor="center",
-                            y=1.04,
-                            yanchor="bottom",
-                            bgcolor="rgba(0,0,0,0)"
+                            y=0.92,              # ↓ mais abaixo do título
+                            yanchor="top",
+                            bgcolor="rgba(0,0,0,0)",
+                            font=dict(size=11),
+                            traceorder="normal"
                         ),
                         xaxis=dict(
                             showgrid=True,
