@@ -416,6 +416,8 @@ def format_money(v):
 
 
 def format_pct(v, nd=1):
+    if pd.isna(v):
+        v = 0
     return f"{v:.{nd}f}%".replace(".", ",")
 
 
@@ -1319,7 +1321,7 @@ with tab3:
         else:
             st.info("Sem internações com pelo menos 7 dias e 20 exames no filtro atual.")
 
-    with st.expander("🔎 Buscar linha do tempo de um paciente", expanded=False):
+with st.expander("🔎 Buscar linha do tempo de um paciente", expanded=False):
     atendimento_input = st.text_input("Código do atendimento", placeholder="Ex: 12335722")
 
     if atendimento_input:
@@ -1540,7 +1542,6 @@ with tab3:
                     )
 
                     st.plotly_chart(fig, use_container_width=True)
-
 
 # ============================================================
 # TAB 4 — MAPA INTEGRADO
