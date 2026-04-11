@@ -90,19 +90,38 @@ def inject_css():
             padding-right: 1.6rem;
         }}
 
+        /* Sidebar mais visível */
         [data-testid="stSidebar"] {{
-            background: linear-gradient(180deg, #0A3E3D 0%, #063434 100%);
-            border-right: 1px solid rgba(255,255,255,0.08);
+            background: linear-gradient(180deg, #0A3E3D 0%, #063434 100%) !important;
+            border-right: 2px solid rgba(255,255,255,0.18);
+            min-width: 320px !important;
+            box-shadow: 8px 0 30px rgba(0,0,0,0.18);
+        }}
+
+        [data-testid="stSidebar"] > div:first-child {{
+            background: linear-gradient(180deg, #0A3E3D 0%, #063434 100%) !important;
         }}
 
         [data-testid="stSidebar"] * {{
             color: #EAF7F1 !important;
         }}
 
+        [data-testid="stSidebar"] .stSelectbox label,
+        [data-testid="stSidebar"] .stMarkdown,
+        [data-testid="stSidebar"] p,
+        [data-testid="stSidebar"] span,
+        [data-testid="stSidebar"] div {{
+            color: #EAF7F1 !important;
+        }}
+
         [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] > div {{
-            background-color: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.10);
+            background-color: rgba(255,255,255,0.08) !important;
+            border: 1px solid rgba(255,255,255,0.18) !important;
             border-radius: 14px;
+        }}
+
+        [data-testid="stSidebarNav"] {{
+            background: transparent !important;
         }}
 
         #MainMenu, footer, header {{
@@ -288,6 +307,19 @@ def inject_css():
             margin-bottom: 0.75rem;
         }}
 
+        .info-note {{
+            background: rgba(255,255,255,0.78);
+            border: 1px solid {COLORS["border"]};
+            border-left: 4px solid {COLORS["deep"]};
+            border-radius: 14px;
+            padding: 0.75rem 0.9rem;
+            color: {COLORS["muted"]};
+            font-size: 0.80rem;
+            line-height: 1.5;
+            margin-top: 0.35rem;
+            margin-bottom: 0.55rem;
+        }}
+
         div[data-testid="stMetric"] {{
             background: rgba(255,255,255,0.8);
             border: 1px solid {COLORS["border"]};
@@ -339,6 +371,10 @@ def section_header(title):
         """,
         unsafe_allow_html=True,
     )
+
+
+def info_note(text):
+    st.markdown(f"""<div class="info-note">{text}</div>""", unsafe_allow_html=True)
 
 
 def kpi_card(label, value, sub, accent, icon="•", fill=0.7, accent_2=None):
@@ -548,7 +584,6 @@ reps_alerta = int(df["Flag_Rep_Alerta"].sum())
 
 taxa_normal = (normais / total_exames * 100) if total_exames else 0
 taxa_rep = (reps / total_exames * 100) if total_exames else 0
-taxa_rep_crit = (reps_crit / max(reps, 1) * 100) if reps else 0
 
 custo_rep_mes = float(df["Custo_Rep"].sum())
 custo_rep_ano = custo_rep_mes * 12
@@ -854,6 +889,13 @@ with c3:
     )
     st.plotly_chart(fig, use_container_width=True)
 
+    info_note(
+        "<b>Crítica:</b> repetição de resultado normal após resultado normal anterior, "
+        "realizada abaixo do intervalo clínico esperado para o exame. "
+        "<br><b>Alerta:</b> repetição de resultado normal após resultado normal anterior, "
+        "mas fora da janela classificada como crítica."
+    )
+
 with c4:
     bins = [0, 6, 12, 24, 48, 72, 168, 9999]
     labels = ["<6h", "6–12h", "12–24h", "24–48h", "48–72h", "3–7d", ">7d"]
@@ -902,7 +944,6 @@ setor_rep = (
 )
 setor_rep = setor_rep[setor_rep["Total"] >= 30].copy()
 setor_rep["Taxa_Rep"] = (setor_rep["Reps"] / setor_rep["Total"] * 100).round(1)
-setor_rep["Classe"] = np.where(setor_rep["Taxa_Rep"] >= setor_rep["Taxa_Rep"].median(), "Alta taxa", "Baixa taxa")
 
 x_med = setor_rep["Reps"].median() if not setor_rep.empty else 0
 y_med = setor_rep["Taxa_Rep"].median() if not setor_rep.empty else 0
@@ -1064,6 +1105,16 @@ with c5:
     )
     st.plotly_chart(fig, use_container_width=True)
 
+    info_note(
+        "<b>Pontual:</b> atendimento com apenas um exame. "
+        "<br><b>Passagem rápida:</b> permanência inferior a 1 dia. "
+        "<br><b>Crítico:</b> baixa normalidade, sem repetição desnecessária relevante. "
+        "<br><b>Monitoramento adequado:</b> alta normalidade sem evidência de desperdício. "
+        "<br><b>Desperdício moderado:</b> alta normalidade com repetições presentes. "
+        "<br><b>Alto desperdício:</b> alta normalidade com elevada repetição por dia. "
+        "<br><b>Misto:</b> perfil intermediário, sem padrão dominante claro."
+    )
+
 with c6:
     longos = pac[(pac["Dias_Internacao"] >= 7) & (pac["Total"] >= 20)].copy()
     longos = longos.sort_values("Reps", ascending=False).head(12)
@@ -1071,34 +1122,47 @@ with c6:
     if not longos.empty:
         longos["Exames_Dia"] = (longos["Total"] / longos["Dias_Internacao"]).round(1)
         longos["Reps_Dia"] = (longos["Reps"] / longos["Dias_Internacao"]).round(2)
-        longos = longos.sort_values("Exames_Dia", ascending=True)
+        longos["Atendimento_str"] = longos["Atendimento"].astype(str)
 
         fig = go.Figure()
+
         fig.add_trace(
             go.Bar(
-                y=longos["Atendimento"].astype(str),
-                x=longos["Exames_Dia"],
-                orientation="h",
+                x=longos["Atendimento_str"],
+                y=longos["Exames_Dia"],
                 name="Exames/dia",
                 marker_color=COLORS["support_ice"],
-                hovertemplate="Atendimento %{y}<br>Exames/dia: %{x:.1f}<extra></extra>",
+                hovertemplate="Atendimento %{x}<br>Exames/dia: %{y:.1f}<extra></extra>",
             )
         )
+
         fig.add_trace(
             go.Scatter(
-                y=longos["Atendimento"].astype(str),
-                x=longos["Reps_Dia"],
-                mode="markers+lines",
+                x=longos["Atendimento_str"],
+                y=longos["Reps_Dia"],
+                mode="lines+markers+text",
                 name="Repetições/dia",
                 marker=dict(size=9, color=COLORS["danger_dark"]),
-                line=dict(color=COLORS["danger_dark"], width=2.2),
-                hovertemplate="Atendimento %{y}<br>Repetições/dia: %{x:.2f}<extra></extra>",
+                line=dict(color=COLORS["danger_dark"], width=2.5),
+                text=[f"{v:.2f}" for v in longos["Reps_Dia"]],
+                textposition="top center",
+                hovertemplate="Atendimento %{x}<br>Repetições/dia: %{y:.2f}<extra></extra>",
             )
         )
+
         fig.update_layout(
-            **plot_layout("Internações longas · intensidade assistencial × desperdício", height=410),
-            xaxis=dict(title="Frequência diária", showgrid=True, gridcolor=COLORS["grid"]),
-            yaxis=dict(title=None, showgrid=False),
+            **plot_layout("Internações longas · intensidade assistencial × desperdício", height=430),
+            xaxis=dict(
+                title="Atendimento",
+                type="category",
+                tickangle=-35,
+                showgrid=False,
+            ),
+            yaxis=dict(
+                title="Frequência diária",
+                showgrid=True,
+                gridcolor=COLORS["grid"],
+            ),
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
