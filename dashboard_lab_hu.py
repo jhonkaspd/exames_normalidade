@@ -1287,12 +1287,10 @@ with tab3:
             else:
                 info = pac[pac["Atendimento"] == atendimento_id].iloc[0]
 
-                # Dias de internação dentro do período filtrado
                 dt_min = p["DataHoraPedido"].min()
                 dt_max = p["DataHoraPedido"].max()
                 dias_internacao = max((dt_max - dt_min).days, 0)
 
-                # Cards resumo
                 m1, m2, m3, m4, m5 = st.columns(5)
                 m1.metric("Exames", format_int(info["Total"]))
                 m2.metric("% normal", format_pct(info["Pct_Normal"]))
@@ -1300,7 +1298,6 @@ with tab3:
                 m4.metric("Custo repetição", f'R$ {info["Custo_Rep"]:.2f}'.replace(".", ","))
                 m5.metric("Dias de Internação", format_int(dias_internacao))
 
-                # Ordem dos exames no eixo Y
                 ordem = (
                     p.groupby("Descrição Exame")["DataHoraPedido"]
                     .min()
@@ -1311,7 +1308,6 @@ with tab3:
                 mapa_y = {ex: i for i, ex in enumerate(ordem)}
                 p["y_pos"] = p["Descrição Exame"].map(mapa_y)
 
-                # Resumo por exame para o eixo direito
                 resumo_exame = (
                     p.groupby("Descrição Exame")
                     .agg(
@@ -1322,15 +1318,6 @@ with tab3:
                     .reset_index()
                 )
                 resumo_exame["Pct_Normal"] = (resumo_exame["Pct_Normal"] * 100).round(1)
-
-                tickvals_right = [mapa_y[ex] for ex in ordem]
-                ticktext_right = [
-                    f'{format_int(qtd)} | {format_pct(pct)}'
-                    for qtd, pct in zip(
-                        resumo_exame["Qtd_Exames"],
-                        resumo_exame["Pct_Normal"]
-                    )
-                ]
 
                 fig = go.Figure()
 
@@ -1404,7 +1391,6 @@ with tab3:
                         )
                     )
 
-                # Eixo X em português
                 meses_pt = {
                     1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr",
                     5: "Mai", 6: "Jun", 7: "Jul", 8: "Ago",
@@ -1419,12 +1405,89 @@ with tab3:
 
                 tick_text = [f"{d.day:02d}-{meses_pt[d.month]}" for d in tick_dates]
 
+                # Área extra à direita para "mini tabela"
+                x_max = p["DataHoraPedido"].max()
+                x_min = p["DataHoraPedido"].min()
+                delta = x_max - x_min
+                x_qtd = x_max + delta * 0.10
+                x_pct = x_max + delta * 0.18
+
+                annotations = []
+
+                # Cabeçalho da mini tabela
+                annotations.append(
+                    dict(
+                        x=x_qtd,
+                        y=1.03,
+                        xref="x",
+                        yref="paper",
+                        text="<b>Qtd</b>",
+                        showarrow=False,
+                        font=dict(size=11, color=COLORS["deep"]),
+                        xanchor="center",
+                        align="center",
+                    )
+                )
+                annotations.append(
+                    dict(
+                        x=x_pct,
+                        y=1.03,
+                        xref="x",
+                        yref="paper",
+                        text="<b>% Normal</b>",
+                        showarrow=False,
+                        font=dict(size=11, color=COLORS["deep"]),
+                        xanchor="center",
+                        align="center",
+                    )
+                )
+
+                # Linhas da mini tabela alinhadas ao eixo Y
+                for _, row in resumo_exame.iterrows():
+                    y = mapa_y[row["Descrição Exame"]]
+
+                    pct = row["Pct_Normal"]
+                    if pct >= 75:
+                        cor_pct = COLORS["primary"]
+                    elif pct >= 50:
+                        cor_pct = COLORS["alert"]
+                    else:
+                        cor_pct = "#E24B4A"
+
+                    annotations.append(
+                        dict(
+                            x=x_qtd,
+                            y=y,
+                            xref="x",
+                            yref="y",
+                            text=format_int(row["Qtd_Exames"]),
+                            showarrow=False,
+                            font=dict(size=10, color=COLORS["deep"]),
+                            xanchor="center",
+                            align="center",
+                        )
+                    )
+
+                    annotations.append(
+                        dict(
+                            x=x_pct,
+                            y=y,
+                            xref="x",
+                            yref="y",
+                            text=format_pct(row["Pct_Normal"]),
+                            showarrow=False,
+                            font=dict(size=10, color=cor_pct),
+                            xanchor="center",
+                            align="center",
+                        )
+                    )
+
                 fig.update_layout(
                     **plot_layout(
                         title=None,
                         height=max(320, len(ordem) * 30 + 150),
                         legend=None,
-                        margin=dict(t=125, l=40, r=170, b=40)
+                        margin=dict(t=125, l=40, r=190, b=40)
                     ),
                     title=dict(
                         text=f"Linha do tempo · atendimento {atendimento_id}",
@@ -1438,7 +1501,7 @@ with tab3:
                         orientation="h",
                         x=0.5,
                         xanchor="center",
-                        y=0.94,
+                        y=0.925,
                         yanchor="top",
                         bgcolor="rgba(0,0,0,0)",
                         font=dict(size=11),
@@ -1450,7 +1513,8 @@ with tab3:
                         title=None,
                         tickmode="array",
                         tickvals=tick_dates,
-                        ticktext=tick_text
+                        ticktext=tick_text,
+                        range=[x_min, x_max + delta * 0.24]
                     ),
                     yaxis=dict(
                         title=None,
@@ -1458,19 +1522,7 @@ with tab3:
                         ticktext=[x.title() for x in ordem],
                         showgrid=False,
                     ),
-                    yaxis2=dict(
-                        title=dict(
-                            text="Qtd exames | % normal",
-                            font=dict(size=11, color=COLORS["deep"])
-                        ),
-                        tickvals=tickvals_right,
-                        ticktext=ticktext_right,
-                        overlaying="y",
-                        side="right",
-                        showgrid=False,
-                        ticks="",
-                        tickfont=dict(size=10, color=COLORS["deep"]),
-                    ),
+                    annotations=annotations
                 )
 
                 st.plotly_chart(fig, use_container_width=True)
