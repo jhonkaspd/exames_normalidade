@@ -106,15 +106,21 @@ def inject_css():
         }}
 
         [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] > div,
-        [data-testid="stSidebar"] .stMultiSelect div[data-baseweb="select"] > div {{
+        [data-testid="stSidebar"] .stMultiSelect div[data-baseweb="select"] > div,
+        [data-testid="stSidebar"] [data-baseweb="input"] > div {{
             background-color: rgba(255,255,255,0.08) !important;
             border: 1px solid rgba(255,255,255,0.16) !important;
             border-radius: 14px;
         }}
 
         [data-testid="stSidebar"] input {{
-            background-color: rgba(255,255,255,0.08) !important;
             color: white !important;
+        }}
+
+        [data-testid="stSidebar"] .stDateInput > div > div {{
+            background-color: rgba(255,255,255,0.08) !important;
+            border: 1px solid rgba(255,255,255,0.16) !important;
+            border-radius: 14px;
         }}
 
         #MainMenu, footer, header {{
@@ -504,8 +510,9 @@ def carregar_dados(path="dados_lab_hu.xlsx"):
     df = pd.read_excel(path, sheet_name="data")
     dim = pd.read_excel(path, sheet_name="dim_exames")
 
-    for col in ["Interpretação", "Descrição Exame", "Setor Solicitante"]:
-        df[col] = df[col].astype(str).str.strip().str.upper()
+    for col in ["Interpretação", "Descrição Exame", "Setor Solicitante", "Unidade"]:
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.strip().str.upper()
 
     dim["Descrição Exame"] = dim["Descrição Exame"].astype(str).str.strip().str.upper()
 
@@ -574,32 +581,51 @@ with st.sidebar:
 
     df_raw = carregar_dados()
 
-    setores = sorted(df_raw["Setor Solicitante"].dropna().unique().tolist())
-    exames_all = sorted(df_raw["Descrição Exame"].dropna().unique().tolist())
+    data_min = pd.to_datetime(df_raw["DataHoraPedido"]).min().date()
+    data_max = pd.to_datetime(df_raw["DataHoraPedido"]).max().date()
 
-    setor_sel = st.selectbox(
-        "Setor solicitante",
-        ["— Todos os setores —"] + setores,
+    # filtro cruzado
+    unidades_all = sorted(df_raw["Unidade"].dropna().unique().tolist()) if "Unidade" in df_raw.columns else []
+    unidade_sel = st.selectbox(
+        "Unidade",
+        ["— Todas as unidades —"] + unidades_all,
         index=0,
     )
 
-    top_n_exames = st.slider("Top N exames", min_value=5, max_value=20, value=10, step=1)
+    if unidade_sel == "— Todas as unidades —":
+        base_setor = df_raw.copy()
+    else:
+        base_setor = df_raw[df_raw["Unidade"] == unidade_sel].copy()
 
-    exame_filtro = st.multiselect(
-        "Filtrar exames específicos",
-        options=exames_all,
-        default=[],
+    setores_disponiveis = sorted(base_setor["Setor Solicitante"].dropna().unique().tolist())
+
+    setor_sel = st.selectbox(
+        "Setor solicitante",
+        ["— Todos os setores —"] + setores_disponiveis,
+        index=0,
     )
 
-    datas = pd.to_datetime(df_raw["DataHoraPedido"])
-    periodo_label = f"{datas.min():%d/%m/%Y} até {datas.max():%d/%m/%Y}"
+    st.markdown("<div style='height:0.35rem'></div>", unsafe_allow_html=True)
+
+    periodo_sel = st.date_input(
+        "Período",
+        value=(data_min, data_max),
+        min_value=data_min,
+        max_value=data_max,
+        format="DD/MM/YYYY",
+    )
+
+    if isinstance(periodo_sel, tuple) and len(periodo_sel) == 2:
+        periodo_inicio_sel, periodo_fim_sel = periodo_sel
+    else:
+        periodo_inicio_sel, periodo_fim_sel = data_min, data_max
 
     st.markdown("---")
     st.markdown(
         f"""
         <div style="font-size:0.78rem;line-height:1.65;opacity:0.94;">
             <b>Base analisada</b><br>
-            {periodo_label}<br><br>
+            {data_min:%d/%m/%Y} até {data_max:%d/%m/%Y}<br><br>
             <b>Fonte</b><br>
             Sistema laboratorial / internação hospitalar<br><br>
             <b>Objetivo</b><br>
@@ -615,15 +641,25 @@ with st.sidebar:
 # ============================================================
 df = df_raw.copy()
 
+if unidade_sel != "— Todas as unidades —":
+    df = df[df["Unidade"] == unidade_sel].copy()
+    titulo_unidade = unidade_sel.title()
+else:
+    titulo_unidade = "Todas as unidades"
+
 if setor_sel != "— Todos os setores —":
     df = df[df["Setor Solicitante"] == setor_sel].copy()
     titulo_setor = setor_sel.title()
 else:
     titulo_setor = "Todos os setores"
 
-if exame_filtro:
-    exame_filtro_up = [x.upper() for x in exame_filtro]
-    df = df[df["Descrição Exame"].isin(exame_filtro_up)].copy()
+periodo_inicio_ts = pd.to_datetime(periodo_inicio_sel)
+periodo_fim_ts = pd.to_datetime(periodo_fim_sel) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+
+df = df[
+    (df["DataHoraPedido"] >= periodo_inicio_ts) &
+    (df["DataHoraPedido"] <= periodo_fim_ts)
+].copy()
 
 if df.empty:
     st.warning("Não há dados disponíveis para o filtro selecionado.")
@@ -666,7 +702,8 @@ st.markdown(
         </div>
         <div class="hero-badges">
             <span class="badge">🏥 Hospital Unimed</span>
-            <span class="badge">🧭 Escopo: {titulo_setor}</span>
+            <span class="badge">🏢 Unidade: {titulo_unidade}</span>
+            <span class="badge">🧭 Setor: {titulo_setor}</span>
             <span class="badge">📅 Período: {periodo_inicio:%d/%m/%Y} a {periodo_fim:%d/%m/%Y}</span>
             <span class="badge">🧪 {format_int(total_exames)} exames</span>
             <span class="badge">💸 {format_money(custo_rep_mes)} em repetições</span>
@@ -811,7 +848,7 @@ with tab1:
         )
         exame_norm = exame_norm[exame_norm["Total"] >= 5].copy()
         exame_norm["Pct_Normal"] = (exame_norm["Normais"] / exame_norm["Total"] * 100).round(1)
-        exame_norm = exame_norm.sort_values("Pct_Normal", ascending=True).tail(top_n_exames)
+        exame_norm = exame_norm.sort_values("Pct_Normal", ascending=True).tail(10)
 
         fig = go.Figure()
         fig.add_trace(
@@ -846,7 +883,7 @@ with tab1:
 
     with c2:
         top_setores = df["Setor Solicitante"].value_counts().head(8).index
-        top_exames = df["Descrição Exame"].value_counts().head(top_n_exames).index
+        top_exames = df["Descrição Exame"].value_counts().head(10).index
 
         df_sub = df[
             (df["Setor Solicitante"].isin(top_setores)) &
@@ -954,7 +991,7 @@ with tab2:
         rep_ex = rep_ex[rep_ex["Reps"] > 0].copy()
         rep_ex["Alerta"] = rep_ex["Reps"] - rep_ex["Criticas"]
         rep_ex["Taxa_Rep"] = (rep_ex["Reps"] / rep_ex["Total"] * 100).round(1)
-        rep_ex = rep_ex.sort_values("Reps", ascending=True).tail(top_n_exames)
+        rep_ex = rep_ex.sort_values("Reps", ascending=True).tail(10)
 
         fig = go.Figure()
         fig.add_trace(
@@ -1331,7 +1368,7 @@ with tab4:
 
     with c7:
         top_sv = df["Setor Solicitante"].value_counts().head(8).index
-        top_ev = df["Descrição Exame"].value_counts().head(top_n_exames).index
+        top_ev = df["Descrição Exame"].value_counts().head(10).index
 
         sub = df[
             (df["Setor Solicitante"].isin(top_sv)) &
