@@ -449,9 +449,8 @@ def kpi_card(label, value, sub, accent, icon="•", fill=0.7, accent_2=None):
     """
 
 
-def plot_layout(title, height=380, legend=None, **kwargs):
+def plot_layout(title=None, height=380, legend=None, **kwargs):
     base = dict(
-        title=dict(text=title, x=0, font=dict(size=15, color=COLORS["deep"])),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(255,255,255,0.76)",
         font=dict(family="Inter, sans-serif", size=12, color=COLORS["text"]),
@@ -464,6 +463,14 @@ def plot_layout(title, height=380, legend=None, **kwargs):
             font_family="Inter, sans-serif",
         ),
     )
+
+    # ✅ só adiciona título se existir
+    if title is not None:
+        base["title"] = dict(
+            text=title,
+            x=0,
+            font=dict(size=15, color=COLORS["deep"])
+        )
 
     if legend is None:
         base["legend"] = dict(
