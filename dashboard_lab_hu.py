@@ -1282,19 +1282,14 @@ with tab3:
                     st.warning("Atendimento não encontrado dentro do filtro selecionado.")
                 else:
                     info = pac[pac["Atendimento"] == atendimento_id].iloc[0]
+                    dias_int = float(info["Dias_Internacao"])
 
-                    # 1) Calcular dias de internação no período filtrado
-                    dt_min = p["DataHoraPedido"].min()
-                    dt_max = p["DataHoraPedido"].max()
-                    dias_internacao = max((dt_max - dt_min).days, 0)
-
-                    # 5 cards
                     m1, m2, m3, m4, m5 = st.columns(5)
                     m1.metric("Exames", format_int(info["Total"]))
                     m2.metric("% normal", format_pct(info["Pct_Normal"]))
                     m3.metric("Repetições", format_int(info["Reps"]))
                     m4.metric("Custo repetição", f'R$ {info["Custo_Rep"]:.2f}'.replace(".", ","))
-                    m5.metric("Dias de Internação", format_int(dias_internacao))
+                    m5.metric("Dias de internação", f"{dias_int:.1f}".replace(".", ","))
 
                     ordem = (
                         p.groupby("Descrição Exame")["DataHoraPedido"]
@@ -1305,6 +1300,33 @@ with tab3:
                     )
                     mapa_y = {ex: i for i, ex in enumerate(ordem)}
                     p["y_pos"] = p["Descrição Exame"].map(mapa_y)
+
+                    resumo_exame = (
+                        p.groupby("Descrição Exame")
+                        .agg(
+                            Total_Exames=("Descrição Exame", "count"),
+                            Pct_Normal=("Flag_Normal", lambda x: round(x.mean() * 100, 0)),
+                        )
+                        .reindex(ordem)
+                        .reset_index()
+                    )
+                    resumo_exame["Resumo"] = resumo_exame.apply(
+                        lambda r: f"{int(r['Total_Exames'])} | {int(r['Pct_Normal'])}%",
+                        axis=1
+                    )
+
+                    tickvals_y = list(range(len(ordem)))
+                    ticktext_y_left = [e.title() for e in ordem]
+                    ticktext_y_right = resumo_exame["Resumo"].tolist()
+
+                    x_min = p["DataHoraPedido"].min()
+                    x_max = p["DataHoraPedido"].max()
+                    tickvals_x, ticktext_x = build_pt_ticks(x_min, x_max)
+
+                    st.markdown(
+                        f"""<div class="chart-title-center">Linha do tempo · atendimento {atendimento_id}</div>""",
+                        unsafe_allow_html=True,
+                    )
 
                     fig = go.Figure()
 
@@ -1334,9 +1356,9 @@ with tab3:
                                 mode="markers",
                                 name="Normal",
                                 marker=dict(
-                                    size=10,
+                                    size=9,
                                     color=COLORS["primary"],
-                                    line=dict(color="white", width=1.4)
+                                    line=dict(color="white", width=1.3),
                                 ),
                                 customdata=[x.title() for x in normais_sub["Descrição Exame"]],
                                 hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
@@ -1351,9 +1373,9 @@ with tab3:
                                 mode="markers",
                                 name="Alterado",
                                 marker=dict(
-                                    size=10,
-                                    color="#E24B4A",  # 3) vermelho
-                                    line=dict(color="white", width=1.4)
+                                    size=9,
+                                    color=COLORS["danger"],
+                                    line=dict(color="white", width=1.3),
                                 ),
                                 customdata=[x.title() for x in alterados_sub["Descrição Exame"]],
                                 hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
@@ -1370,7 +1392,7 @@ with tab3:
                                 marker=dict(
                                     size=18,
                                     color="rgba(0,0,0,0)",
-                                    line=dict(color=COLORS["alert"], width=2.7)
+                                    line=dict(color=COLORS["alert"], width=2.5),
                                 ),
                                 customdata=[x.title() for x in repetidos_sub["Descrição Exame"]],
                                 hovertemplate="Repetição<br>%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
@@ -1413,7 +1435,7 @@ with tab3:
                             orientation="h",
                             x=0.5,
                             xanchor="center",
-                            y=0.95,              # ↓ mais abaixo do título
+                            y=0.96,              # ↓ mais abaixo do título
                             yanchor="top",
                             bgcolor="rgba(0,0,0,0)",
                             font=dict(size=11),
