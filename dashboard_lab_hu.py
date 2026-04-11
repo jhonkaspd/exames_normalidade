@@ -396,404 +396,101 @@ def inject_css():
 
 inject_css()
 
-import warnings
-warnings.filterwarnings("ignore")
-
-import numpy as np
-import pandas as pd
-import plotly.graph_objects as go
-import streamlit as st
 
 
 # ============================================================
-# CONFIGURAÇÃO DA PÁGINA
+# FUNÇÕES AUXILIARES DE FORMATAÇÃO E LAYOUT
 # ============================================================
-st.set_page_config(
-    page_title="Lab Vision | HU",
-    page_icon="🧪",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+
+def format_int(valor):
+    """Inteiro no padrão BR: 1.234"""
+    try:
+        return f"{int(valor):,}".replace(",", ".")
+    except (TypeError, ValueError):
+        return "—"
 
 
-# ============================================================
-# PALETA
-# ============================================================
-COLORS = {
-    "primary": "#00995D",
-    "primary_light": "#B6D44C",
-    "deep": "#004B52",
-    "alert": "#F47920",
-
-    "support_rose": "#C59A8B",
-    "support_blush": "#E5C6C0",
-    "support_sand": "#D5CEC2",
-    "support_warm": "#F4E2B1",
-    "support_mint": "#C1D0B9",
-    "support_ice": "#C7DEE2",
-
-    "danger": "#C94F4F",
-    "danger_dark": "#8F2D2D",
-    "warning": "#F0B24A",
-    "success": "#00995D",
-    "info": "#2E7D8A",
-
-    "bg": "#F4F8F6",
-    "surface": "#FFFFFF",
-    "surface_soft": "#EEF5F1",
-    "surface_deep": "#073B3A",
-    "border": "#D8E4DD",
-    "text": "#18302B",
-    "muted": "#6B7D76",
-    "grid": "#E8EFEB",
-    "white": "#FFFFFF",
-}
-
-DIAS_PT = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
-MESES_PT = {
-    1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr", 5: "Mai", 6: "Jun",
-    7: "Jul", 8: "Ago", 9: "Set", 10: "Out", 11: "Nov", 12: "Dez"
-}
+def format_pct(valor, decimais=1):
+    """Percentual BR: 64,8%"""
+    try:
+        s = f"{float(valor):.{decimais}f}"
+        return s.replace(".", ",") + "%"
+    except (TypeError, ValueError):
+        return "—"
 
 
-# ============================================================
-# CSS
-# ============================================================
-def inject_css():
+def format_money(valor, decimais=2):
+    """Monetário BR: R$ 12.669,86"""
+    try:
+        s = f"{float(valor):,.{decimais}f}"
+        # vírgula → X, ponto → vírgula, X → ponto
+        s = s.replace(",", "X").replace(".", ",").replace("X", ".")
+        return f"R$ {s}"
+    except (TypeError, ValueError):
+        return "R$ —"
+
+
+def plot_layout(title, height=400, **kwargs):
+    """Retorna dict de layout padrão para figuras Plotly."""
+    base = dict(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="#FFFFFF",
+        font=dict(family="Inter, sans-serif", color=COLORS["text"], size=12),
+        margin=dict(l=4, r=4, t=44, b=4),
+        title=dict(
+            text=title,
+            font=dict(size=13, color=COLORS["text"], weight=600),
+            x=0,
+            pad=dict(l=0, b=8),
+        ),
+        hoverlabel=dict(
+            bgcolor=COLORS["surface_deep"],
+            font_color=COLORS["white"],
+            font_family="JetBrains Mono, monospace",
+            font_size=12,
+        ),
+        height=height,
+    )
+    base.update(kwargs)
+    return base
+
+
+def kpi_card(label, value, subtitle="", color=None, icon="", fill=0, accent_2=None):
+    """Renderiza um card KPI via st.markdown."""
+    border_color = color or COLORS["primary"]
+    bg = border_color if fill else COLORS["surface"]
+    text_color = COLORS["white"] if fill else border_color
+    sub_color = COLORS["white"] if fill else COLORS["muted"]
+    border_style = f"border-left: 4px solid {border_color};"
+    if fill:
+        border_style = ""
+    html = f"""
+    <div style="background:{bg};border-radius:12px;padding:18px 22px;
+                {border_style}
+                box-shadow:0 1px 4px rgba(0,0,0,0.07);min-height:90px;">
+      <div style="font-size:0.72rem;font-weight:600;text-transform:uppercase;
+                  letter-spacing:0.07em;color:{sub_color};margin-bottom:4px;">
+        {icon} {label}
+      </div>
+      <div style="font-size:1.9rem;font-weight:700;color:{text_color};
+                  font-family:'JetBrains Mono',monospace;line-height:1.1;margin-bottom:4px;">
+        {value}
+      </div>
+      <div style="font-size:0.75rem;color:{sub_color};opacity:0.85;">{subtitle}</div>
+    </div>"""
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def info_note(text):
+    """Renderiza uma nota informativa abaixo de um gráfico."""
     st.markdown(
-        f"""
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
-
-        html, body, [class*="css"] {{
-            font-family: 'Inter', sans-serif;
-            color: {COLORS["text"]};
-        }}
-
-        .stApp {{
-            background:
-                radial-gradient(circle at top right, rgba(182,212,76,0.10), transparent 24%),
-                radial-gradient(circle at top left, rgba(0,153,93,0.08), transparent 28%),
-                linear-gradient(180deg, #F7FBF8 0%, #F2F7F4 100%);
-        }}
-
-        .block-container {{
-            max-width: 1580px;
-            padding-top: 1.1rem;
-            padding-bottom: 2rem;
-            padding-left: 1.5rem;
-            padding-right: 1.5rem;
-        }}
-
-        [data-testid="stSidebar"] {{
-            background: linear-gradient(180deg, #083A39 0%, #052F2F 100%) !important;
-            border-right: 2px solid rgba(255,255,255,0.14);
-            min-width: 325px !important;
-            box-shadow: 8px 0 26px rgba(0,0,0,0.18);
-        }}
-
-        [data-testid="stSidebar"] > div:first-child {{
-            background: linear-gradient(180deg, #083A39 0%, #052F2F 100%) !important;
-        }}
-
-        [data-testid="stSidebar"] * {{
-            color: #ECF8F2 !important;
-        }}
-
-        [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] > div,
-        [data-testid="stSidebar"] .stMultiSelect div[data-baseweb="select"] > div,
-        [data-testid="stSidebar"] [data-baseweb="input"] > div {{
-            background-color: rgba(255,255,255,0.08) !important;
-            border: 1px solid rgba(255,255,255,0.16) !important;
-            border-radius: 14px;
-        }}
-
-        [data-testid="stSidebar"] input {{
-            color: white !important;
-        }}
-
-        [data-testid="stSidebar"] .stDateInput {{
-            width: 100%;
-        }}
-
-        [data-testid="stSidebar"] .stDateInput > div {{
-            width: 100%;
-        }}
-
-        [data-testid="stSidebar"] .stDateInput > div > div {{
-            background-color: rgba(255,255,255,0.08) !important;
-            border: 1px solid rgba(255,255,255,0.16) !important;
-            border-radius: 14px;
-            min-height: 42px;
-        }}
-
-        #MainMenu, footer, header {{
-            visibility: hidden;
-        }}
-
-        .hero {{
-            position: relative;
-            overflow: hidden;
-            background:
-                linear-gradient(135deg, rgba(0,75,82,0.98) 0%, rgba(0,153,93,0.94) 58%, rgba(182,212,76,0.88) 100%);
-            border-radius: 26px;
-            padding: 1.5rem 1.6rem 1.5rem 1.6rem;
-            box-shadow: 0 16px 40px rgba(0, 75, 82, 0.18);
-            border: 1px solid rgba(255,255,255,0.14);
-            margin-bottom: 1rem;
-        }}
-
-        .hero:before {{
-            content: "";
-            position: absolute;
-            right: -30px;
-            top: -30px;
-            width: 220px;
-            height: 220px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.08);
-            filter: blur(5px);
-        }}
-
-        .hero-title {{
-            color: white;
-            font-size: 1.9rem;
-            font-weight: 800;
-            line-height: 1.05;
-            letter-spacing: -0.03em;
-            margin-bottom: 0.25rem;
-        }}
-
-        .hero-sub {{
-            color: rgba(255,255,255,0.90);
-            font-size: 0.97rem;
-            line-height: 1.5;
-            margin-bottom: 0.9rem;
-            max-width: 980px;
-        }}
-
-        .hero-badges {{
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }}
-
-        .badge {{
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            padding: 0.42rem 0.78rem;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.14);
-            color: white;
-            font-size: 0.77rem;
-            font-weight: 700;
-            border: 1px solid rgba(255,255,255,0.14);
-            backdrop-filter: blur(6px);
-        }}
-
-        .section-title {{
-            margin-top: 0.9rem;
-            margin-bottom: 0.7rem;
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }}
-
-        .section-title .dot {{
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, {COLORS["primary"]}, {COLORS["primary_light"]});
-            box-shadow: 0 0 0 4px rgba(0,153,93,0.10);
-        }}
-
-        .section-title .text {{
-            font-size: 0.83rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: {COLORS["deep"]};
-        }}
-
-        .caption-box {{
-            background: linear-gradient(180deg, rgba(193,208,185,0.22), rgba(255,255,255,0.76));
-            border: 1px solid {COLORS["border"]};
-            padding: 0.8rem 0.95rem;
-            border-radius: 16px;
-            color: {COLORS["muted"]};
-            font-size: 0.82rem;
-            margin-bottom: 0.85rem;
-        }}
-
-        .kpi-card {{
-            position: relative;
-            overflow: hidden;
-            background: linear-gradient(180deg, rgba(255,255,255,0.99) 0%, rgba(248,252,249,0.98) 100%);
-            border: 1px solid {COLORS["border"]};
-            border-radius: 22px;
-            padding: 1rem 1.05rem 0.95rem 1.05rem;
-            min-height: 138px;
-            box-shadow: 0 12px 26px rgba(0,75,82,0.07);
-        }}
-
-        .kpi-card:before {{
-            content: "";
-            position: absolute;
-            inset: 0 auto 0 0;
-            width: 6px;
-            background: var(--accent);
-        }}
-
-        .kpi-top {{
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 0.55rem;
-        }}
-
-        .kpi-icon {{
-            width: 38px;
-            height: 38px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            background: var(--accent-soft);
-        }}
-
-        .kpi-label {{
-            font-size: 0.74rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: {COLORS["muted"]};
-        }}
-
-        .kpi-value {{
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.72rem;
-            font-weight: 800;
-            color: var(--accent);
-            line-height: 1.0;
-            margin-bottom: 0.35rem;
-        }}
-
-        .kpi-sub {{
-            font-size: 0.82rem;
-            color: {COLORS["muted"]};
-            line-height: 1.35;
-            min-height: 40px;
-        }}
-
-        .kpi-bar {{
-            margin-top: 0.65rem;
-            height: 8px;
-            border-radius: 999px;
-            background: #EAF2EE;
-            overflow: hidden;
-        }}
-
-        .kpi-fill {{
-            height: 100%;
-            border-radius: 999px;
-            background: linear-gradient(90deg, var(--accent), var(--accent-2));
-        }}
-
-        .info-note {{
-            background: rgba(255,255,255,0.82);
-            border: 1px solid {COLORS["border"]};
-            border-left: 4px solid {COLORS["deep"]};
-            border-radius: 14px;
-            padding: 0.75rem 0.9rem;
-            color: {COLORS["muted"]};
-            font-size: 0.80rem;
-            line-height: 1.55;
-            margin-top: 0.35rem;
-            margin-bottom: 0.6rem;
-        }}
-
-        .insight-card {{
-            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(243,249,245,0.96));
-            border: 1px solid {COLORS["border"]};
-            border-radius: 18px;
-            padding: 0.9rem 1rem;
-            box-shadow: 0 10px 24px rgba(0,75,82,0.05);
-            min-height: 125px;
-        }}
-
-        .insight-title {{
-            font-size: 0.76rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: {COLORS["deep"]};
-            margin-bottom: 0.45rem;
-        }}
-
-        .insight-text {{
-            font-size: 0.84rem;
-            line-height: 1.5;
-            color: {COLORS["muted"]};
-        }}
-
-        .footer-note {{
-            color: {COLORS["muted"]};
-            font-size: 0.75rem;
-            text-align: center;
-            padding-top: 1rem;
-            margin-top: 1rem;
-            border-top: 1px solid {COLORS["border"]};
-        }}
-
-        .chart-title-center {{
-            text-align: center;
-            font-weight: 800;
-            color: {COLORS["deep"]};
-            margin-top: 0.25rem;
-            margin-bottom: 0.15rem;
-            font-size: 1rem;
-        }}
-
-        div[data-testid="stMetric"] {{
-            background: rgba(255,255,255,0.84);
-            border: 1px solid {COLORS["border"]};
-            border-radius: 16px;
-            padding: 0.75rem 0.9rem;
-        }}
-
-        div[data-testid="stExpander"] {{
-            border: 1px solid {COLORS["border"]};
-            border-radius: 18px;
-            background: rgba(255,255,255,0.76);
-        }}
-
-        .stTabs [data-baseweb="tab-list"] {{
-            gap: 8px;
-        }}
-
-        .stTabs [data-baseweb="tab"] {{
-            background: rgba(255,255,255,0.72);
-            border-radius: 14px;
-            border: 1px solid {COLORS["border"]};
-            padding: 10px 16px;
-            font-weight: 700;
-            color: {COLORS["deep"]};
-        }}
-
-        .stTabs [aria-selected="true"] {{
-            background: linear-gradient(180deg, rgba(0,153,93,0.10), rgba(182,212,76,0.12));
-            border-color: rgba(0,153,93,0.35);
-        }}
-        </style>
-        """,
+        f"""<div style="font-size:0.78rem;line-height:1.75;padding:10px 14px;
+            background:{COLORS['surface_soft']};border-radius:8px;
+            border:1px solid {COLORS['border']};margin-top:-6px;
+            color:{COLORS['muted']};">{text}</div>""",
         unsafe_allow_html=True,
     )
 
-
-inject_css()
-
 # ============================================================
 # DADOS
 # ============================================================
@@ -853,68 +550,7 @@ def carregar_dados(path="dados_lab_hu.xlsx"):
     df["Custo_Rep"] = df["Custo_Unit"] * df["Flag_Rep"]
 
     return df
-
 # ============================================================
-# DADOS
-# ============================================================
-@st.cache_data(ttl=3600, show_spinner="Carregando dados laboratoriais...")
-def carregar_dados(path="dados_lab_hu.xlsx"):
-    df = pd.read_excel(path, sheet_name="data")
-    dim = pd.read_excel(path, sheet_name="dim_exames")
-
-    for col in ["Interpretação", "Descrição Exame", "Setor Solicitante", "Unidade"]:
-        if col in df.columns:
-            df[col] = df[col].astype(str).str.strip().str.upper()
-
-    dim["Descrição Exame"] = dim["Descrição Exame"].astype(str).str.strip().str.upper()
-
-    df["DataHoraPedido"] = pd.to_datetime(df["DataHoraPedido"], errors="coerce")
-    df = df.dropna(subset=["DataHoraPedido"]).copy()
-
-    df["Data"] = df["DataHoraPedido"].dt.date
-    df["Hora"] = df["DataHoraPedido"].dt.hour
-    df["DiaSemana"] = df["DataHoraPedido"].dt.dayofweek
-    df["MesAno"] = df["DataHoraPedido"].dt.strftime("%m/%Y")
-    df["Turno"] = pd.cut(
-        df["Hora"],
-        bins=[-1, 6, 12, 18, 23],
-        labels=["Madrugada", "Manhã", "Tarde", "Noite"],
-    )
-
-    custo_map = dict(zip(dim["Descrição Exame"], dim["CUSTO_EXAME"]))
-    intervalo_map = dict(zip(dim["Descrição Exame"], dim["INTERVALOS_CLINICOS"]))
-
-    df["Custo_Unit"] = df["Descrição Exame"].map(custo_map).fillna(3.50)
-    df["Intervalo_Clinico_h"] = df["Descrição Exame"].map(intervalo_map).fillna(24)
-
-    df["Flag_Normal"] = (df["Interpretação"] == "NORMAL").astype(int)
-    df["Flag_Alterado"] = (df["Interpretação"] != "NORMAL").astype(int)
-
-    df = df.sort_values(["Atendimento", "Descrição Exame", "DataHoraPedido"]).copy()
-    grp = df.groupby(["Atendimento", "Descrição Exame"], dropna=False)
-
-    df["Interp_Anterior"] = grp["Interpretação"].shift(1)
-    df["DataHora_Anterior"] = grp["DataHoraPedido"].shift(1)
-    df["Horas_Desde_Anterior"] = (
-        (df["DataHoraPedido"] - df["DataHora_Anterior"]).dt.total_seconds() / 3600
-    ).round(1)
-
-    df["Flag_Rep"] = (
-        (df["Interpretação"] == "NORMAL") &
-        (df["Interp_Anterior"] == "NORMAL")
-    ).astype(int)
-
-    df["Flag_Rep_Crit"] = (
-        (df["Flag_Rep"] == 1) &
-        (df["Horas_Desde_Anterior"] < df["Intervalo_Clinico_h"])
-    ).astype(int)
-
-    df["Flag_Rep_Alerta"] = ((df["Flag_Rep"] == 1) & (df["Flag_Rep_Crit"] == 0)).astype(int)
-    df["Custo_Rep"] = df["Custo_Unit"] * df["Flag_Rep"]
-
-    return df
-
-    # ============================================================
 # SIDEBAR
 # ============================================================
 with st.sidebar:
