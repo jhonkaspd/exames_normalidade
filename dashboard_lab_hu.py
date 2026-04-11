@@ -60,36 +60,6 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 [data-testid="stSidebar"] h2,
 [data-testid="stSidebar"] h3 { color: #E8F0F8 !important; }
  
-/* ── Botão de toggle da sidebar ──────────────────────────────────────
-   Garante que o botão seja sempre visível, mesmo quando a sidebar
-   está recolhida. O Streamlit usa data-testid="collapsedControl"
-   para o botão que reabre a sidebar.                                  */
-[data-testid="collapsedControl"] {
-    display:          flex  !important;
-    visibility:       visible !important;
-    opacity:          1     !important;
-    position:         fixed  !important;
-    top:              1rem   !important;
-    left:             0.6rem !important;
-    z-index:          999999 !important;
-    background:       #0D1B2A !important;
-    border:           1px solid #1E3A5F !important;
-    border-radius:    8px    !important;
-    padding:          6px 8px !important;
-    box-shadow:       0 2px 8px rgba(0,0,0,0.35) !important;
-    transition:       background 0.15s, box-shadow 0.15s !important;
-}
-[data-testid="collapsedControl"]:hover {
-    background:   #1E3A5F !important;
-    box-shadow:   0 4px 14px rgba(0,0,0,0.50) !important;
-}
-[data-testid="collapsedControl"] svg {
-    fill:         #C8D8E8 !important;
-    stroke:       #C8D8E8 !important;
-    width:        18px    !important;
-    height:       18px    !important;
-}
- 
 /* KPI Cards */
 .kpi-card {
     background: #FFFFFF;
@@ -116,55 +86,71 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
     padding-bottom: 6px; border-bottom: 1px solid #E5E7EB;
 }
  
-/* Esconder menu e rodapé do Streamlit, mas preservar o botão de toggle */
-#MainMenu { visibility: hidden; }
-footer    { visibility: hidden; }
+/* Esconder menu, header e rodapé nativos do Streamlit */
+#MainMenu, footer, header { visibility: hidden; }
  
-/* Oculta apenas o conteúdo interno do header (título, menu hamburguer)
-   sem esconder o header inteiro — o botão de toggle vive nele */
-header [data-testid="stToolbar"]         { visibility: hidden !important; }
-header [data-testid="stDecoration"]      { display: none !important; }
-header [data-testid="stStatusWidget"]    { visibility: hidden !important; }
+/* Botão flutuante de abrir/fechar sidebar */
+#lab-sidebar-toggle {
+    position:      fixed;
+    top:           12px;
+    left:          12px;
+    z-index:       9999999;
+    width:         36px;
+    height:        36px;
+    background:    #0D1B2A;
+    border:        1px solid #1E3A5F;
+    border-radius: 8px;
+    cursor:        pointer;
+    display:       flex;
+    align-items:   center;
+    justify-content: center;
+    box-shadow:    0 2px 8px rgba(0,0,0,0.45);
+    transition:    background 0.15s, box-shadow 0.15s;
+}
+#lab-sidebar-toggle:hover {
+    background:  #1E3A5F;
+    box-shadow:  0 4px 14px rgba(0,0,0,0.60);
+}
+#lab-sidebar-toggle svg {
+    width:  18px;
+    height: 18px;
+    fill:   #C8D8E8;
+}
+</style>
  
-/* Força o header a não ter altura própria (ficará transparente/invisível
-   mas o botão de toggle continua renderizando dentro dele) */
-header {
-    background: transparent !important;
-    height: auto !important;
-}
+<!-- Botão flutuante que aciona o toggle nativo do Streamlit -->
+<div id="lab-sidebar-toggle" title="Abrir / fechar filtros" onclick="toggleSidebar()">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <rect x="3" y="5"  width="18" height="2" rx="1"/>
+    <rect x="3" y="11" width="18" height="2" rx="1"/>
+    <rect x="3" y="17" width="18" height="2" rx="1"/>
+  </svg>
+</div>
  
-/* ── Botão de toggle (dentro do header) ─────────────────────────────
-   Cobre os seletores do botão tanto quando a sidebar está aberta
-   (stSidebarCollapsedControl) quanto quando está fechada (collapsedControl) */
-[data-testid="collapsedControl"],
-[data-testid="stSidebarCollapsedControl"] {
-    display:       flex       !important;
-    visibility:    visible    !important;
-    opacity:       1          !important;
-    position:      fixed      !important;
-    top:           0.6rem     !important;
-    left:          0.5rem     !important;
-    z-index:       1000000    !important;
-    background:    #0D1B2A   !important;
-    border:        1px solid #1E3A5F !important;
-    border-radius: 8px        !important;
-    padding:       6px 8px    !important;
-    box-shadow:    0 2px 8px rgba(0,0,0,0.40) !important;
-    transition:    background 0.15s, box-shadow 0.15s !important;
-    cursor:        pointer    !important;
+<script>
+function toggleSidebar() {
+    // Tenta todos os seletores conhecidos do botão nativo do Streamlit
+    var selectors = [
+        '[data-testid="collapsedControl"] button',
+        '[data-testid="stSidebarCollapsedControl"] button',
+        '[data-testid="collapsedControl"]',
+        '[data-testid="stSidebarCollapsedControl"]',
+        'button[kind="header"]',
+        'section[data-testid="stSidebar"] + div button',
+    ];
+    for (var i = 0; i < selectors.length; i++) {
+        var btn = window.parent.document.querySelector(selectors[i]);
+        if (btn) { btn.click(); return; }
+    }
+    // Fallback: altera a largura da sidebar diretamente via CSS
+    var sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
+    if (sidebar) {
+        var curr = window.parent.getComputedStyle(sidebar).width;
+        sidebar.style.width = (parseInt(curr) > 10) ? '0px' : '21rem';
+        sidebar.style.overflow = (parseInt(curr) > 10) ? 'hidden' : 'visible';
+    }
 }
-[data-testid="collapsedControl"]:hover,
-[data-testid="stSidebarCollapsedControl"]:hover {
-    background:  #1E3A5F !important;
-    box-shadow:  0 4px 14px rgba(0,0,0,0.55) !important;
-}
-[data-testid="collapsedControl"] svg,
-[data-testid="stSidebarCollapsedControl"] svg {
-    fill:    #C8D8E8 !important;
-    stroke:  #C8D8E8 !important;
-    width:   18px   !important;
-    height:  18px   !important;
-}
+</script>
 """, unsafe_allow_html=True)
  
 # ─────────────────────────────────────────────────────────────────────
