@@ -1306,6 +1306,30 @@ with tab3:
                     mapa_y = {ex: i for i, ex in enumerate(ordem)}
                     p["y_pos"] = p["Descrição Exame"].map(mapa_y)
 
+                    # ==========================================================
+                    # RESUMO POR EXAME PARA O EIXO DIREITO
+                    # ==========================================================
+                    resumo_exame = (
+                        p.groupby("Descrição Exame")
+                        .agg(
+                            Qtd_Exames=("Descrição Exame", "count"),
+                            Pct_Normal=("Flag_Normal", "mean"),
+                        )
+                        .reindex(ordem)
+                        .reset_index()
+                    )
+
+                    resumo_exame["Pct_Normal"] = (resumo_exame["Pct_Normal"] * 100).round(1)
+
+                    tickvals_right = [mapa_y[ex] for ex in ordem]
+                    ticktext_right = [
+                        f'{format_int(qtd)} | {format_pct(pct)}'
+                        for qtd, pct in zip(
+                            resumo_exame["Qtd_Exames"],
+                            resumo_exame["Pct_Normal"]
+                        )
+                    ]
+
                     fig = go.Figure()
 
                     for ex in ordem:
@@ -1352,7 +1376,7 @@ with tab3:
                                 name="Alterado",
                                 marker=dict(
                                     size=10,
-                                    color="#E24B4A",  # 3) vermelho
+                                    color="#E24B4A",
                                     line=dict(color="white", width=1.4)
                                 ),
                                 customdata=[x.title() for x in alterados_sub["Descrição Exame"]],
@@ -1377,7 +1401,7 @@ with tab3:
                             )
                         )
 
-                    # 4) Eixo X em português
+                    # Eixo X em português
                     meses_pt = {
                         1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr",
                         5: "Mai", 6: "Jun", 7: "Jul", 8: "Ago",
@@ -1397,15 +1421,16 @@ with tab3:
 
                     fig.update_layout(
                         **plot_layout(
-                            height=max(300, len(ordem) * 28 + 130),
+                            title=None,
+                            height=max(320, len(ordem) * 30 + 150),
                             legend=None,
-                            margin=dict(t=95, l=40, r=20, b=40)
+                            margin=dict(t=120, l=40, r=150, b=40)
                         ),
                         title=dict(
                             text=f"Linha do tempo · atendimento {atendimento_id}",
                             x=0.5,
                             xanchor="center",
-                            y=0.97,              # posição vertical
+                            y=0.98,
                             yanchor="top",
                             font=dict(size=16)
                         ),
@@ -1413,7 +1438,7 @@ with tab3:
                             orientation="h",
                             x=0.5,
                             xanchor="center",
-                            y=0.96,             # ↓ mais abaixo do título
+                            y=0.935,
                             yanchor="top",
                             bgcolor="rgba(0,0,0,0)",
                             font=dict(size=11),
@@ -1432,14 +1457,24 @@ with tab3:
                             tickvals=list(range(len(ordem))),
                             ticktext=[x.title() for x in ordem],
                             showgrid=False,
-                        )
+                        ),
+                        yaxis2=dict(
+                            title="Qtd | % Normal",
+                            titlefont=dict(size=11, color=COLORS["deep"]),
+                            tickvals=tickvals_right,
+                            ticktext=ticktext_right,
+                            overlaying="y",
+                            side="right",
+                            showgrid=False,
+                            ticks="",
+                            tickfont=dict(size=10, color=COLORS["deep"]),
+                        ),
                     )
 
                     st.plotly_chart(fig, use_container_width=True)
 
             except ValueError:
                 st.error("Digite apenas números no código do atendimento.")
-
 
 # ============================================================
 # TAB 4 — MAPA INTEGRADO
