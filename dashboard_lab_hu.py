@@ -59,6 +59,10 @@ COLORS = {
 }
 
 DIAS_PT = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
+MESES_PT = {
+    1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr", 5: "Mai", 6: "Jun",
+    7: "Jul", 8: "Ago", 9: "Set", 10: "Out", 11: "Nov", 12: "Dez"
+}
 
 
 # ============================================================
@@ -117,10 +121,19 @@ def inject_css():
             color: white !important;
         }}
 
+        [data-testid="stSidebar"] .stDateInput {{
+            width: 100%;
+        }}
+
+        [data-testid="stSidebar"] .stDateInput > div {{
+            width: 100%;
+        }}
+
         [data-testid="stSidebar"] .stDateInput > div > div {{
             background-color: rgba(255,255,255,0.08) !important;
             border: 1px solid rgba(255,255,255,0.16) !important;
             border-radius: 14px;
+            min-height: 42px;
         }}
 
         #MainMenu, footer, header {{
@@ -343,6 +356,15 @@ def inject_css():
             border-top: 1px solid {COLORS["border"]};
         }}
 
+        .chart-title-center {{
+            text-align: center;
+            font-weight: 800;
+            color: {COLORS["deep"]};
+            margin-top: 0.25rem;
+            margin-bottom: 0.15rem;
+            font-size: 1rem;
+        }}
+
         div[data-testid="stMetric"] {{
             background: rgba(255,255,255,0.84);
             border: 1px solid {COLORS["border"]};
@@ -502,6 +524,38 @@ def color_scale_list(values, vmin=0, vmax=100):
     return [color_scale(v, vmin=vmin, vmax=vmax) for v in values]
 
 
+def format_date_pt(dt):
+    dt = pd.to_datetime(dt)
+    return f"{dt.day:02d}-{MESES_PT[dt.month]}"
+
+
+def build_pt_ticks(min_dt, max_dt, n_ticks=8):
+    min_dt = pd.to_datetime(min_dt).normalize()
+    max_dt = pd.to_datetime(max_dt).normalize()
+    if min_dt == max_dt:
+        return [min_dt], [format_date_pt(min_dt)]
+
+    total_days = max((max_dt - min_dt).days, 1)
+
+    if total_days <= 7:
+        freq = "D"
+    elif total_days <= 20:
+        freq = "2D"
+    elif total_days <= 45:
+        freq = "4D"
+    elif total_days <= 90:
+        freq = "7D"
+    else:
+        freq = "15D"
+
+    ticks = list(pd.date_range(min_dt, max_dt, freq=freq))
+    if ticks[-1] != max_dt:
+        ticks.append(max_dt)
+
+    labels = [format_date_pt(d) for d in ticks]
+    return ticks, labels
+
+
 # ============================================================
 # DADOS
 # ============================================================
@@ -584,7 +638,6 @@ with st.sidebar:
     data_min = pd.to_datetime(df_raw["DataHoraPedido"]).min().date()
     data_max = pd.to_datetime(df_raw["DataHoraPedido"]).max().date()
 
-    # filtro cruzado
     unidades_all = sorted(df_raw["Unidade"].dropna().unique().tolist()) if "Unidade" in df_raw.columns else []
     unidade_sel = st.selectbox(
         "Unidade",
@@ -606,19 +659,30 @@ with st.sidebar:
     )
 
     st.markdown("<div style='height:0.35rem'></div>", unsafe_allow_html=True)
+    st.markdown("**Período**")
 
-    periodo_sel = st.date_input(
-        "Período",
-        value=(data_min, data_max),
-        min_value=data_min,
-        max_value=data_max,
-        format="DD/MM/YYYY",
-    )
+    col_dt1, col_dt2 = st.columns(2)
+    with col_dt1:
+        periodo_inicio_sel = st.date_input(
+            "Início",
+            value=data_min,
+            min_value=data_min,
+            max_value=data_max,
+            format="DD/MM/YYYY",
+            key="periodo_inicio_sidebar",
+        )
+    with col_dt2:
+        periodo_fim_sel = st.date_input(
+            "Fim",
+            value=data_max,
+            min_value=data_min,
+            max_value=data_max,
+            format="DD/MM/YYYY",
+            key="periodo_fim_sidebar",
+        )
 
-    if isinstance(periodo_sel, tuple) and len(periodo_sel) == 2:
-        periodo_inicio_sel, periodo_fim_sel = periodo_sel
-    else:
-        periodo_inicio_sel, periodo_fim_sel = data_min, data_max
+    if periodo_inicio_sel > periodo_fim_sel:
+        st.warning("A data inicial não pode ser maior que a data final.")
 
     st.markdown("---")
     st.markdown(
@@ -1267,11 +1331,14 @@ with tab3:
                     st.warning("Atendimento não encontrado dentro do filtro selecionado.")
                 else:
                     info = pac[pac["Atendimento"] == atendimento_id].iloc[0]
-                    m1, m2, m3, m4 = st.columns(4)
+                    dias_int = float(info["Dias_Internacao"])
+
+                    m1, m2, m3, m4, m5 = st.columns(5)
                     m1.metric("Exames", format_int(info["Total"]))
                     m2.metric("% normal", format_pct(info["Pct_Normal"]))
                     m3.metric("Repetições", format_int(info["Reps"]))
                     m4.metric("Custo repetição", f'R$ {info["Custo_Rep"]:.2f}'.replace(".", ","))
+                    m5.metric("Dias de internação", f"{dias_int:.1f}".replace(".", ","))
 
                     ordem = (
                         p.groupby("Descrição Exame")["DataHoraPedido"]
@@ -1282,6 +1349,33 @@ with tab3:
                     )
                     mapa_y = {ex: i for i, ex in enumerate(ordem)}
                     p["y_pos"] = p["Descrição Exame"].map(mapa_y)
+
+                    resumo_exame = (
+                        p.groupby("Descrição Exame")
+                        .agg(
+                            Total_Exames=("Descrição Exame", "count"),
+                            Pct_Normal=("Flag_Normal", lambda x: round(x.mean() * 100, 0)),
+                        )
+                        .reindex(ordem)
+                        .reset_index()
+                    )
+                    resumo_exame["Resumo"] = resumo_exame.apply(
+                        lambda r: f"{int(r['Total_Exames'])} | {int(r['Pct_Normal'])}%",
+                        axis=1
+                    )
+
+                    tickvals_y = list(range(len(ordem)))
+                    ticktext_y_left = [e.title() for e in ordem]
+                    ticktext_y_right = resumo_exame["Resumo"].tolist()
+
+                    x_min = p["DataHoraPedido"].min()
+                    x_max = p["DataHoraPedido"].max()
+                    tickvals_x, ticktext_x = build_pt_ticks(x_min, x_max)
+
+                    st.markdown(
+                        f"""<div class="chart-title-center">Linha do tempo · atendimento {atendimento_id}</div>""",
+                        unsafe_allow_html=True,
+                    )
 
                     fig = go.Figure()
 
@@ -1310,7 +1404,11 @@ with tab3:
                                 y=normais_sub["y_pos"],
                                 mode="markers",
                                 name="Normal",
-                                marker=dict(size=10, color=COLORS["primary"], line=dict(color="white", width=1.4)),
+                                marker=dict(
+                                    size=9,
+                                    color=COLORS["primary"],
+                                    line=dict(color="white", width=1.3),
+                                ),
                                 customdata=[x.title() for x in normais_sub["Descrição Exame"]],
                                 hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
                             )
@@ -1323,7 +1421,11 @@ with tab3:
                                 y=alterados_sub["y_pos"],
                                 mode="markers",
                                 name="Alterado",
-                                marker=dict(size=10, color=COLORS["deep"], line=dict(color="white", width=1.4)),
+                                marker=dict(
+                                    size=9,
+                                    color=COLORS["danger"],
+                                    line=dict(color="white", width=1.3),
+                                ),
                                 customdata=[x.title() for x in alterados_sub["Descrição Exame"]],
                                 hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
                             )
@@ -1336,20 +1438,59 @@ with tab3:
                                 y=repetidos_sub["y_pos"],
                                 mode="markers",
                                 name="Repetição",
-                                marker=dict(size=18, color="rgba(0,0,0,0)", line=dict(color=COLORS["alert"], width=2.7)),
+                                marker=dict(
+                                    size=18,
+                                    color="rgba(0,0,0,0)",
+                                    line=dict(color=COLORS["alert"], width=2.5),
+                                ),
                                 customdata=[x.title() for x in repetidos_sub["Descrição Exame"]],
                                 hovertemplate="Repetição<br>%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
                             )
                         )
 
                     fig.update_layout(
-                        **plot_layout(f"Linha do tempo · atendimento {atendimento_id}", height=max(300, len(ordem) * 28 + 110)),
-                        xaxis=dict(showgrid=True, gridcolor=COLORS["grid"], title=None),
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(255,255,255,0.76)",
+                        font=dict(family="Inter, sans-serif", size=12, color=COLORS["text"]),
+                        margin=dict(l=8, r=8, t=75, b=8),
+                        height=max(340, len(ordem) * 28 + 130),
+                        hoverlabel=dict(
+                            bgcolor=COLORS["deep"],
+                            font_color=COLORS["white"],
+                            font_size=12,
+                            font_family="Inter, sans-serif",
+                        ),
+                        legend=dict(
+                            orientation="h",
+                            x=0.5,
+                            xanchor="center",
+                            y=1.03,
+                            yanchor="bottom",
+                            bgcolor="rgba(0,0,0,0)",
+                        ),
+                        xaxis=dict(
+                            title=None,
+                            showgrid=True,
+                            gridcolor=COLORS["grid"],
+                            tickmode="array",
+                            tickvals=tickvals_x,
+                            ticktext=ticktext_x,
+                        ),
                         yaxis=dict(
                             title=None,
-                            tickvals=list(range(len(ordem))),
-                            ticktext=[x.title() for x in ordem],
+                            tickvals=tickvals_y,
+                            ticktext=ticktext_y_left,
                             showgrid=False,
+                        ),
+                        yaxis2=dict(
+                            title="Qtde | % Normal",
+                            tickvals=tickvals_y,
+                            ticktext=ticktext_y_right,
+                            overlaying="y",
+                            side="right",
+                            showgrid=False,
+                            tickfont=dict(color=COLORS["muted"], size=10),
+                            titlefont=dict(color=COLORS["muted"], size=11),
                         ),
                     )
                     st.plotly_chart(fig, use_container_width=True)
