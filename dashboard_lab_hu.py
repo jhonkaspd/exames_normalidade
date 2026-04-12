@@ -1355,6 +1355,7 @@ with tab3:
                 st.warning("Atendimento não encontrado dentro do filtro selecionado.")
             else:
                 info = pac[pac["Atendimento"] == atendimento_id].iloc[0]
+                setor = info["Setor"]
 
                 dt_min = p["DataHoraPedido"].min()
                 dt_max = p["DataHoraPedido"].max()
@@ -1633,7 +1634,7 @@ with tab3:
                         margin=dict(t=88, l=margem_esquerda, r=20, b=40)
                     ),
                     title=dict(
-                        text=f"Linha do tempo | atendimento {atendimento_id} | {titulo_setor}",
+                        text=f"Linha do tempo | Atendimento {atendimento_id} | {setor}",
                         x=centro_grafico,
                         xanchor="center",
                         y=0.98,
