@@ -1633,7 +1633,7 @@ with tab3:
                         margin=dict(t=88, l=margem_esquerda, r=20, b=40)
                     ),
                     title=dict(
-                        text=f"Linha do tempo · atendimento {atendimento_id}",
+                        text=f"Linha do tempo | atendimento {atendimento_id} | {titulo_setor}",
                         x=centro_grafico,
                         xanchor="center",
                         y=0.98,
