@@ -1271,14 +1271,55 @@ with tab3:
             st.info("Sem internações com pelo menos 7 dias e 20 exames no filtro atual.")
 
     with st.expander("🔎 Buscar linha do tempo de um paciente", expanded=False):
-        atendimento_input = st.text_input("Código do atendimento", placeholder="Ex: 12335722")
 
-        if atendimento_input:
-            try:
-                atendimento_id = int(atendimento_input.strip())
-            except ValueError:
-                st.error("Digite apenas números no código do atendimento.")
-                st.stop()
+        # ==========================================================
+        # FILTROS CRUZADOS
+        # 1) Perfil de Classificação
+        # 2) Número do Atendimento
+        # ==========================================================
+        perfis_disponiveis = sorted(pac["Perfil"].dropna().unique().tolist())
+
+        col_f1, col_f2 = st.columns([1, 1])
+
+        with col_f1:
+            perfil_sel = st.selectbox(
+                "Perfil de Classificação",
+                options=["— Selecione —"] + perfis_disponiveis,
+                index=0,
+                key="perfil_linha_tempo"
+            )
+
+        if perfil_sel != "— Selecione —":
+            pac_filtrado = pac[pac["Perfil"] == perfil_sel].copy()
+        else:
+            pac_filtrado = pac.copy()
+
+        atendimentos_disponiveis = (
+            pac_filtrado["Atendimento"]
+            .dropna()
+            .astype(int)
+            .sort_values()
+            .astype(str)
+            .tolist()
+        )
+
+        with col_f2:
+            atendimento_sel = st.selectbox(
+                "Número do Atendimento",
+                options=["— Selecione —"] + atendimentos_disponiveis,
+                index=0,
+                key="atendimento_linha_tempo"
+            )
+
+        # ==========================================================
+        # VALIDAÇÃO
+        # ==========================================================
+        if perfil_sel == "— Selecione —":
+            st.info("Selecione um Perfil de Classificação para habilitar os atendimentos.")
+        elif atendimento_sel == "— Selecione —":
+            st.info("Selecione um Número do Atendimento.")
+        else:
+            atendimento_id = int(atendimento_sel)
 
             p = df[df["Atendimento"] == atendimento_id].sort_values("DataHoraPedido").copy()
 
@@ -1330,41 +1371,30 @@ with tab3:
 
                 resumo_exame["Exame_disp"] = resumo_exame["Exame_txt"].apply(lambda x: truncar(x, 24))
 
-                # ------------------------------------------------------------------
+                # ==========================================================
                 # DIMENSÕES DA TABELA À ESQUERDA
-                # ------------------------------------------------------------------
+                # ==========================================================
                 max_exame = max(
                     len("Exame"),
                     resumo_exame["Exame_disp"].map(len).max() if not resumo_exame.empty else 5
                 )
-                max_qtd = max(
-                    len("Qtd"),
-                    resumo_exame["Qtd_txt"].map(len).max() if not resumo_exame.empty else 3
-                )
-                max_pct = max(
-                    len("% Normal"),
-                    resumo_exame["Pct_txt"].map(len).max() if not resumo_exame.empty else 8
-                )
 
-                # espaço reservado à esquerda
                 tabela_w = 0.13
 
-                # posições horizontais das colunas
                 x_exame = 0.001
                 x_qtd = 0.07
                 x_pct = 0.11
 
-                # início do gráfico
                 x_domain_inicio = 0.15
 
-                # margem esquerda em px — corrigida
+                # corrigido: antes estava limitando incorretamente para 20
                 margem_esquerda = min(max(120 + max_exame * 7, 220), 20)
 
                 fig = go.Figure()
 
-                # ------------------------------------------------------------------
+                # ==========================================================
                 # LINHAS HORIZONTAIS POR EXAME
-                # ------------------------------------------------------------------
+                # ==========================================================
                 for ex in ordem:
                     sub = p[p["Descrição Exame"] == ex].sort_values("DataHoraPedido")
                     if len(sub) > 1:
@@ -1379,9 +1409,9 @@ with tab3:
                             )
                         )
 
-                # ------------------------------------------------------------------
+                # ==========================================================
                 # MARCADORES
-                # ------------------------------------------------------------------
+                # ==========================================================
                 normais_sub = p[p["Interpretação"] == "NORMAL"]
                 alterados_sub = p[p["Interpretação"] != "NORMAL"]
                 repetidos_sub = p[p["Flag_Rep"] == 1]
@@ -1437,9 +1467,9 @@ with tab3:
                         )
                     )
 
-                # ------------------------------------------------------------------
+                # ==========================================================
                 # EIXO X EM PORTUGUÊS
-                # ------------------------------------------------------------------
+                # ==========================================================
                 meses_pt = {
                     1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr",
                     5: "Mai", 6: "Jun", 7: "Jul", 8: "Ago",
@@ -1460,9 +1490,9 @@ with tab3:
                 if delta == pd.Timedelta(0):
                     delta = pd.Timedelta(days=1)
 
-                # ------------------------------------------------------------------
+                # ==========================================================
                 # TABELA À ESQUERDA VIA ANNOTATIONS
-                # ------------------------------------------------------------------
+                # ==========================================================
                 annotations = [
                     dict(
                         x=x_exame,
