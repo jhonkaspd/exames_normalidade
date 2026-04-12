@@ -1457,8 +1457,16 @@ with tab3:
                                 color=COLORS["primary"],
                                 line=dict(color="white", width=1.4)
                             ),
-                            customdata=[x.title() for x in normais_sub["Descrição Exame"]],
-                            hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
+                            customdata=np.stack([
+                                normais_sub["Descrição Exame"].str.title(),
+                                normais_sub["Resultado"]
+                            ], axis=1),
+
+                            hovertemplate=(
+                                "<b>%{customdata[0]}</b><br>"
+                                "Resultado: %{customdata[1]}<br>"
+                                "%{x|%d/%m/%Y %H:%M}"
+                                "<extra></extra>"),
                         )
                     )
 
@@ -1474,8 +1482,16 @@ with tab3:
                                 color="#E24B4A",
                                 line=dict(color="white", width=1.4)
                             ),
-                            customdata=[x.title() for x in alterados_sub["Descrição Exame"]],
-                            hovertemplate="%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
+                            customdata=np.stack([
+                                alterados_sub["Descrição Exame"].str.title(),
+                                alterados_sub["Resultado"]
+                            ], axis=1),
+
+                            hovertemplate=(
+                                "<b>%{customdata[0]}</b><br>"
+                                "Resultado: %{customdata[1]}<br>"
+                                "%{x|%d/%m/%Y %H:%M}"
+                                "<extra></extra>"),
                         )
                     )
 
@@ -1491,8 +1507,16 @@ with tab3:
                                 color="rgba(0,0,0,0)",
                                 line=dict(color=COLORS["alert"], width=2.7)
                             ),
-                            customdata=[x.title() for x in repetidos_sub["Descrição Exame"]],
-                            hovertemplate="Repetição<br>%{customdata}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>",
+                            customdata=np.stack([
+                                repetidos_sub["Descrição Exame"].str.title(),
+                                repetidos_sub["Resultado"]
+                            ], axis=1),
+                            hovertemplate=(
+                                "<b>Repetição</b><br>"
+                                "%{customdata[0]}<br>"
+                                "Resultado: %{customdata[1]}<br>"
+                                "%{x|%d/%m/%Y %H:%M}"
+                                "<extra></extra>"),
                         )
                     )
 
