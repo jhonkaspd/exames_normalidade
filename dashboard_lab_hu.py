@@ -1358,7 +1358,7 @@ with tab3:
                 x_domain_inicio = 0.10
 
                 # margem esquerda em px — corrigida
-                margem_esquerda = min(max(120 + max_exame * 7, 220), 340)
+                margem_esquerda = min(max(120 + max_exame * 7, 220), 20)
 
                 fig = go.Figure()
 
