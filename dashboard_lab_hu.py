@@ -1230,7 +1230,7 @@ with tab3:
         )
 
     with c6:
-        longos = pac[(pac["Dias_Internacao"] >= 7) & (pac["Total"] >= 20)].copy()
+        longos = pac[(pac["Dias_Internacao"] >= 10) & (pac["Total"] >= 30)].copy()
         longos = longos.sort_values("Reps", ascending=False).head(12)
 
         if not longos.empty:
@@ -1268,7 +1268,11 @@ with tab3:
             )
             st.plotly_chart(fig, use_container_width=True)
         else:
-            st.info("Sem internações com pelo menos 7 dias e 20 exames no filtro atual.")
+            st.info("Sem internações com pelo menos 10 dias e 30 exames no filtro atual.")
+
+        info_note(
+            "Atendimentos com mais de 10 dias de internação e 30 exames realizados. "
+        )    
 
     with st.expander("🔎 Buscar linha do tempo de um paciente", expanded=False):
 
