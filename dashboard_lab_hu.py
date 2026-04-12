@@ -716,7 +716,6 @@ st.markdown(
             com foco em desperdício assistencial, criticidade clínica e impacto econômico.
         </div>
         <div class="hero-badges">
-            <span class="badge">🏥 Hospital Unimed</span>
             <span class="badge">🏢 Unidade: {titulo_unidade}</span>
             <span class="badge">🧭 Setor: {titulo_setor}</span>
             <span class="badge">📅 Período: {periodo_inicio:%d/%m/%Y} a {periodo_fim:%d/%m/%Y}</span>
