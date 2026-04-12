@@ -1351,8 +1351,8 @@ with tab3:
 
                 # posições horizontais das colunas
                 x_exame = 0.001
-                x_qtd = 0.05
-                x_pct = 0.07
+                x_qtd = 0.07
+                x_pct = 0.09
 
                 # início do gráfico
                 x_domain_inicio = 0.10
