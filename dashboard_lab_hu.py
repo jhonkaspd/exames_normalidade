@@ -1296,7 +1296,7 @@ with tab3:
                 m2.metric("% normal", format_pct(info["Pct_Normal"]))
                 m3.metric("Repetições", format_int(info["Reps"]))
                 m4.metric("Custo repetição", f'R$ {info["Custo_Rep"]:.2f}'.replace(".", ","))
-                m5.metric("Dias de Internação", format_int(dias_internacao))
+                m5.metric("Dias de internação", format_int(dias_internacao))
 
                 ordem = (
                     p.groupby("Descrição Exame")["DataHoraPedido"]
@@ -1305,6 +1305,7 @@ with tab3:
                     .index
                     .tolist()
                 )
+
                 mapa_y = {ex: i for i, ex in enumerate(ordem)}
                 p["y_pos"] = p["Descrição Exame"].map(mapa_y)
 
@@ -1319,9 +1320,40 @@ with tab3:
                 )
                 resumo_exame["Pct_Normal"] = (resumo_exame["Pct_Normal"] * 100).round(1)
 
+                resumo_exame["Exame_txt"] = resumo_exame["Descrição Exame"].str.title()
+                resumo_exame["Qtd_txt"] = resumo_exame["Qtd_Exames"].apply(format_int)
+                resumo_exame["Pct_txt"] = resumo_exame["Pct_Normal"].apply(format_pct)
+
+                def truncar(txt, limite=24):
+                    txt = str(txt)
+                    return txt if len(txt) <= limite else txt[:limite - 1] + "…"
+
+                resumo_exame["Exame_disp"] = resumo_exame["Exame_txt"].apply(lambda x: truncar(x, 24))
+
+                max_exame = max(
+                    len("Exame"),
+                    resumo_exame["Exame_disp"].map(len).max() if not resumo_exame.empty else 5
+                )
+                max_qtd = max(
+                    len("Qtd"),
+                    resumo_exame["Qtd_txt"].map(len).max() if not resumo_exame.empty else 3
+                )
+                max_pct = max(
+                    len("% Normal"),
+                    resumo_exame["Pct_txt"].map(len).max() if not resumo_exame.empty else 8
+                )
+
+                tabela_w = min(max(0.24 + max_exame * 0.0045, 0.28), 0.36)
+                x_domain_inicio = tabela_w
+
+                x_exame = 0.01
+                x_qtd = tabela_w - 0.09
+                x_pct = tabela_w - 0.03
+
+                margem_esquerda = min(max(150 + max_exame * 7, 230), 340)
+
                 fig = go.Figure()
 
-                # Linhas de conexão por exame
                 for ex in ordem:
                     sub = p[p["Descrição Exame"] == ex].sort_values("DataHoraPedido")
                     if len(sub) > 1:
@@ -1402,51 +1434,55 @@ with tab3:
                     end=p["DataHoraPedido"].max().normalize(),
                     freq="7D"
                 )
+                tick_text_x = [f"{d.day:02d}-{meses_pt[d.month]}" for d in tick_dates]
 
-                tick_text = [f"{d.day:02d}-{meses_pt[d.month]}" for d in tick_dates]
-
-                # Área extra à direita para "mini tabela"
-                x_max = p["DataHoraPedido"].max()
                 x_min = p["DataHoraPedido"].min()
+                x_max = p["DataHoraPedido"].max()
                 delta = x_max - x_min
-                x_qtd = x_max + delta * 0.10
-                x_pct = x_max + delta * 0.18
 
-                annotations = []
+                if delta == pd.Timedelta(0):
+                    delta = pd.Timedelta(days=1)
 
-                # Cabeçalho da mini tabela
-                annotations.append(
+                annotations = [
+                    dict(
+                        x=x_exame,
+                        y=1.015,
+                        xref="paper",
+                        yref="paper",
+                        text="<b>Exame</b>",
+                        showarrow=False,
+                        xanchor="left",
+                        align="left",
+                        font=dict(size=11, color=COLORS["deep"])
+                    ),
                     dict(
                         x=x_qtd,
-                        y=1.03,
-                        xref="x",
+                        y=1.015,
+                        xref="paper",
                         yref="paper",
                         text="<b>Qtd</b>",
                         showarrow=False,
-                        font=dict(size=11, color=COLORS["deep"]),
                         xanchor="center",
                         align="center",
-                    )
-                )
-                annotations.append(
+                        font=dict(size=11, color=COLORS["deep"])
+                    ),
                     dict(
                         x=x_pct,
-                        y=1.03,
-                        xref="x",
+                        y=1.015,
+                        xref="paper",
                         yref="paper",
                         text="<b>% Normal</b>",
                         showarrow=False,
-                        font=dict(size=11, color=COLORS["deep"]),
                         xanchor="center",
                         align="center",
-                    )
-                )
+                        font=dict(size=11, color=COLORS["deep"])
+                    ),
+                ]
 
-                # Linhas da mini tabela alinhadas ao eixo Y
                 for _, row in resumo_exame.iterrows():
                     y = mapa_y[row["Descrição Exame"]]
-
                     pct = row["Pct_Normal"]
+
                     if pct >= 75:
                         cor_pct = COLORS["primary"]
                     elif pct >= 50:
@@ -1458,13 +1494,13 @@ with tab3:
                         dict(
                             x=x_qtd,
                             y=y,
-                            xref="x",
+                            xref="paper",
                             yref="y",
-                            text=format_int(row["Qtd_Exames"]),
+                            text=row["Qtd_txt"],
                             showarrow=False,
-                            font=dict(size=10, color=COLORS["deep"]),
                             xanchor="center",
                             align="center",
+                            font=dict(size=10, color=COLORS["text"])
                         )
                     )
 
@@ -1472,57 +1508,77 @@ with tab3:
                         dict(
                             x=x_pct,
                             y=y,
-                            xref="x",
+                            xref="paper",
                             yref="y",
-                            text=format_pct(row["Pct_Normal"]),
+                            text=row["Pct_txt"],
                             showarrow=False,
-                            font=dict(size=10, color=cor_pct),
                             xanchor="center",
                             align="center",
+                            font=dict(size=10, color=cor_pct)
                         )
                     )
+
+                shapes = [
+                    dict(
+                        type="line",
+                        xref="paper",
+                        yref="paper",
+                        x0=x_domain_inicio - 0.012,
+                        x1=x_domain_inicio - 0.012,
+                        y0=0.02,
+                        y1=0.98,
+                        line=dict(color=COLORS["grid"], width=1)
+                    )
+                ]
+
+                centro_grafico = (x_domain_inicio + 0.995) / 2
 
                 fig.update_layout(
                     **plot_layout(
                         title=None,
-                        height=max(320, len(ordem) * 30 + 150),
+                        height=max(420, len(ordem) * 28 + 120),
                         legend=None,
-                        margin=dict(t=125, l=40, r=190, b=40)
+                        margin=dict(t=88, l=margem_esquerda, r=20, b=40)
                     ),
                     title=dict(
                         text=f"Linha do tempo · atendimento {atendimento_id}",
-                        x=0.5,
+                        x=centro_grafico,
                         xanchor="center",
-                        y=0.985,
+                        y=0.98,
                         yanchor="top",
                         font=dict(size=16)
                     ),
                     legend=dict(
                         orientation="h",
-                        x=0.5,
+                        x=centro_grafico,
                         xanchor="center",
-                        y=0.925,
-                        yanchor="top",
+                        y=1.005,
+                        yanchor="bottom",
                         bgcolor="rgba(0,0,0,0)",
                         font=dict(size=11),
                         traceorder="normal"
                     ),
                     xaxis=dict(
+                        domain=[x_domain_inicio, 0.995],
                         showgrid=True,
                         gridcolor=COLORS["grid"],
                         title=None,
                         tickmode="array",
                         tickvals=tick_dates,
-                        ticktext=tick_text,
-                        range=[x_min, x_max + delta * 0.24]
+                        ticktext=tick_text_x,
+                        range=[x_min - delta * 0.02, x_max + delta * 0.03],
+                        zeroline=False
                     ),
                     yaxis=dict(
                         title=None,
                         tickvals=list(range(len(ordem))),
-                        ticktext=[x.title() for x in ordem],
+                        ticktext=resumo_exame["Exame_disp"].tolist(),
+                        tickfont=dict(size=10, color=COLORS["text"]),
                         showgrid=False,
+                        automargin=False
                     ),
-                    annotations=annotations
+                    annotations=annotations,
+                    shapes=shapes
                 )
 
                 st.plotly_chart(fig, use_container_width=True)
