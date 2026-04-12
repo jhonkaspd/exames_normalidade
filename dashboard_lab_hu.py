@@ -1273,53 +1273,81 @@ with tab3:
     with st.expander("🔎 Buscar linha do tempo de um paciente", expanded=False):
 
         # ==========================================================
-        # FILTROS CRUZADOS
-        # 1) Perfil de Classificação
-        # 2) Número do Atendimento
+        # ESCOLHA DO MODO
         # ==========================================================
-        perfis_disponiveis = sorted(pac["Perfil"].dropna().unique().tolist())
-
-        col_f1, col_f2 = st.columns([1, 1])
-
-        with col_f1:
-            perfil_sel = st.selectbox(
-                "Perfil de Classificação",
-                options=["— Selecione —"] + perfis_disponiveis,
-                index=0,
-                key="perfil_linha_tempo"
-            )
-
-        if perfil_sel != "— Selecione —":
-            pac_filtrado = pac[pac["Perfil"] == perfil_sel].copy()
-        else:
-            pac_filtrado = pac.copy()
-
-        atendimentos_disponiveis = (
-            pac_filtrado["Atendimento"]
-            .dropna()
-            .astype(int)
-            .sort_values()
-            .astype(str)
-            .tolist()
+        modo_busca = st.radio(
+            "Forma de busca",
+            options=["Digitar atendimento", "Filtrar por perfil"],
+            horizontal=True
         )
 
-        with col_f2:
-            atendimento_sel = st.selectbox(
-                "Número do Atendimento",
-                options=["— Selecione —"] + atendimentos_disponiveis,
-                index=0,
-                key="atendimento_linha_tempo"
-            )
+        atendimento_id = None
 
         # ==========================================================
-        # VALIDAÇÃO
+        # MODO 1 — DIGITAÇÃO
         # ==========================================================
-        if perfil_sel == "— Selecione —":
-            st.info("Selecione um Perfil de Classificação para habilitar os atendimentos.")
-        elif atendimento_sel == "— Selecione —":
-            st.info("Selecione um Número do Atendimento.")
+        if modo_busca == "Digitar atendimento":
+
+            atendimento_input = st.text_input(
+                "Código do atendimento",
+                placeholder="Ex: 12335722"
+            )
+
+            if atendimento_input:
+                try:
+                    atendimento_id = int(atendimento_input.strip())
+                except ValueError:
+                    st.error("Digite apenas números no código do atendimento.")
+                    st.stop()
+
+        # ==========================================================
+        # MODO 2 — FILTRO CRUZADO
+        # ==========================================================
         else:
-            atendimento_id = int(atendimento_sel)
+
+            perfis_disponiveis = sorted(pac["Perfil"].dropna().unique().tolist())
+
+            col_f1, col_f2 = st.columns([1, 1])
+
+            with col_f1:
+                perfil_sel = st.selectbox(
+                    "Perfil de Classificação",
+                    options=["— Selecione —"] + perfis_disponiveis,
+                    index=0
+                )
+
+            if perfil_sel != "— Selecione —":
+                pac_filtrado = pac[pac["Perfil"] == perfil_sel].copy()
+            else:
+                pac_filtrado = pac.copy()
+
+            atendimentos_disponiveis = (
+                pac_filtrado["Atendimento"]
+                .dropna()
+                .astype(int)
+                .sort_values()
+                .astype(str)
+                .tolist()
+            )
+
+            with col_f2:
+                atendimento_sel = st.selectbox(
+                    "Número do Atendimento",
+                    options=["— Selecione —"] + atendimentos_disponiveis,
+                    index=0
+                )
+
+            if perfil_sel == "— Selecione —":
+                st.info("Selecione um Perfil de Classificação.")
+            elif atendimento_sel == "— Selecione —":
+                st.info("Selecione um Número do Atendimento.")
+            else:
+                atendimento_id = int(atendimento_sel)
+
+        # ==========================================================
+        # EXECUÇÃO DO GRÁFICO (COMUM AOS DOIS MODOS)
+        # ==========================================================
+        if atendimento_id is not None:
 
             p = df[df["Atendimento"] == atendimento_id].sort_values("DataHoraPedido").copy()
 
