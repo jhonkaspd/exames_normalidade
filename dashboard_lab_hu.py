@@ -1330,6 +1330,9 @@ with tab3:
 
                 resumo_exame["Exame_disp"] = resumo_exame["Exame_txt"].apply(lambda x: truncar(x, 24))
 
+                # ------------------------------------------------------------------
+                # DIMENSÕES DA TABELA À ESQUERDA
+                # ------------------------------------------------------------------
                 max_exame = max(
                     len("Exame"),
                     resumo_exame["Exame_disp"].map(len).max() if not resumo_exame.empty else 5
@@ -1343,17 +1346,25 @@ with tab3:
                     resumo_exame["Pct_txt"].map(len).max() if not resumo_exame.empty else 8
                 )
 
+                # espaço reservado à esquerda
                 tabela_w = 0.13
-                x_domain_inicio = 0.10
 
+                # posições horizontais das colunas
                 x_exame = 0.001
                 x_qtd = 0.05
                 x_pct = 0.07
 
-                margem_esquerda = min(max(150 + max_exame * 7, 230), 340)
+                # início do gráfico
+                x_domain_inicio = 0.10
+
+                # margem esquerda em px — corrigida
+                margem_esquerda = min(max(120 + max_exame * 7, 220), 340)
 
                 fig = go.Figure()
 
+                # ------------------------------------------------------------------
+                # LINHAS HORIZONTAIS POR EXAME
+                # ------------------------------------------------------------------
                 for ex in ordem:
                     sub = p[p["Descrição Exame"] == ex].sort_values("DataHoraPedido")
                     if len(sub) > 1:
@@ -1368,6 +1379,9 @@ with tab3:
                             )
                         )
 
+                # ------------------------------------------------------------------
+                # MARCADORES
+                # ------------------------------------------------------------------
                 normais_sub = p[p["Interpretação"] == "NORMAL"]
                 alterados_sub = p[p["Interpretação"] != "NORMAL"]
                 repetidos_sub = p[p["Flag_Rep"] == 1]
@@ -1423,6 +1437,9 @@ with tab3:
                         )
                     )
 
+                # ------------------------------------------------------------------
+                # EIXO X EM PORTUGUÊS
+                # ------------------------------------------------------------------
                 meses_pt = {
                     1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr",
                     5: "Mai", 6: "Jun", 7: "Jul", 8: "Ago",
@@ -1443,6 +1460,9 @@ with tab3:
                 if delta == pd.Timedelta(0):
                     delta = pd.Timedelta(days=1)
 
+                # ------------------------------------------------------------------
+                # TABELA À ESQUERDA VIA ANNOTATIONS
+                # ------------------------------------------------------------------
                 annotations = [
                     dict(
                         x=x_exame,
@@ -1492,6 +1512,20 @@ with tab3:
 
                     annotations.append(
                         dict(
+                            x=x_exame,
+                            y=y,
+                            xref="paper",
+                            yref="y",
+                            text=row["Exame_disp"],
+                            showarrow=False,
+                            xanchor="left",
+                            align="left",
+                            font=dict(size=10, color=COLORS["text"])
+                        )
+                    )
+
+                    annotations.append(
+                        dict(
                             x=x_qtd,
                             y=y,
                             xref="paper",
@@ -1523,8 +1557,8 @@ with tab3:
                         type="line",
                         xref="paper",
                         yref="paper",
-                        x0=x_domain_inicio - 0.012,
-                        x1=x_domain_inicio - 0.012,
+                        x0=x_domain_inicio - 0.008,
+                        x1=x_domain_inicio - 0.008,
                         y0=0.02,
                         y1=0.98,
                         line=dict(color=COLORS["grid"], width=1)
@@ -1572,9 +1606,9 @@ with tab3:
                     yaxis=dict(
                         title=None,
                         tickvals=list(range(len(ordem))),
-                        ticktext=resumo_exame["Exame_disp"].tolist(),
-                        tickfont=dict(size=10, color=COLORS["text"]),
+                        ticktext=[""] * len(ordem),
                         showgrid=False,
+                        showticklabels=False,
                         automargin=False
                     ),
                     annotations=annotations,
