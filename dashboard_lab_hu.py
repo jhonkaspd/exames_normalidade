@@ -1343,12 +1343,12 @@ with tab3:
                     resumo_exame["Pct_txt"].map(len).max() if not resumo_exame.empty else 8
                 )
 
-                tabela_w = min(max(0.24 + max_exame * 0.0045, 0.28), 0.36)
-                x_domain_inicio = tabela_w
+                tabela_w = 0.13
+                x_domain_inicio = 0.10
 
-                x_exame = 0.01
-                x_qtd = tabela_w - 0.09
-                x_pct = tabela_w - 0.03
+                x_exame = 0.001
+                x_qtd = 0.05
+                x_pct = 0.07
 
                 margem_esquerda = min(max(150 + max_exame * 7, 230), 340)
 
