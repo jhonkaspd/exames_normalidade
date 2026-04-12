@@ -1352,10 +1352,10 @@ with tab3:
                 # posições horizontais das colunas
                 x_exame = 0.001
                 x_qtd = 0.07
-                x_pct = 0.09
+                x_pct = 0.11
 
                 # início do gráfico
-                x_domain_inicio = 0.10
+                x_domain_inicio = 0.13
 
                 # margem esquerda em px — corrigida
                 margem_esquerda = min(max(120 + max_exame * 7, 220), 20)
