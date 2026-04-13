@@ -1913,8 +1913,7 @@ with tab5:
         st.markdown(
             textwrap.dedent(f"""
             <div class="info-note">
-                Foram identificados <b>{len(ref_df)}</b> exames com valor de referência parametrizado na aba
-                <b>dim_normalidade</b> da base analítica.
+                Foram identificados <b>{len(ref_df)}</b> exames com valor de referência parametrizado na base analítica.
             </div>
             """),
             unsafe_allow_html=True,
@@ -2015,7 +2014,7 @@ with tab5:
 st.markdown(
     """
     <div class="footer-note">
-        Lab Vision · Hospital Unimed · Monitoramento de repetições laboratoriais ·
+        Lab Vision · Laboratorio Unimed · Monitoramento de repetições laboratoriais ·
         Painel refinado com foco em leitura executiva, priorização assistencial e impacto financeiro.
     </div>
     """,
