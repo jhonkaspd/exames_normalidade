@@ -1035,22 +1035,22 @@ with tab2:
             )
         )
         fig.update_layout(
-            **plot_layout(
-                "Ranking de repetições por exame",
-                height=430,
-                barmode="stack",
-                legend=dict(
-                    orientation="h",
-                    yanchor="top",
-                    y=-0.20,          # 👈 joga para baixo
-                    xanchor="center",
-                    x=0.5
-                )
-            ),
-            margin=dict(t=60, b=70),  # 👈 espaço para a legenda
+            **plot_layout("Ranking de repetições por exame", height=430, barmode="stack"),
             xaxis=dict(title=None, showgrid=True, gridcolor=COLORS["grid"]),
             yaxis=dict(title=None, showgrid=False),
         )
+
+        fig.update_layout(
+            legend=dict(
+                orientation="h",
+                yanchor="top",
+                y=-0.20,
+                xanchor="center",
+                x=0.5
+            ),
+            margin=dict(t=60, b=70)  # espaço para legenda
+        )
+
         st.plotly_chart(fig, use_container_width=True)
 
         info_note(
