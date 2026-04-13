@@ -2097,17 +2097,20 @@ with tab5:
         width: 1%;
         white-space: nowrap;
         text-align: center;
+        vertical-align: middle;
     }}
 
     .col-intervalo {{
         width: 1%;
         white-space: nowrap;
         text-align: center;
+        vertical-align: middle;
     }}
 
     .col-ref {{
         width: 1%;
         text-align: center;
+        vertical-align: middle;
     }}
 
     .col-limite {{
