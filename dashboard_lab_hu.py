@@ -11,6 +11,7 @@ warnings.filterwarnings("ignore")
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import textwrap
 import streamlit as st
 
 
@@ -1884,12 +1885,12 @@ with tab5:
     section_header("Valores de referência utilizados na análise")
 
     st.markdown(
-        """
+        textwrap.dedent("""
         <div class="caption-box">
             <b>Objetivo:</b> explicitar os intervalos e pontos de corte considerados para interpretação de normalidade
             dos exames utilizados neste estudo, promovendo transparência analítica e alinhamento clínico.
         </div>
-        """,
+        """),
         unsafe_allow_html=True,
     )
 
@@ -1910,16 +1911,16 @@ with tab5:
         ref_df.index = ref_df.index + 1
 
         st.markdown(
-            f"""
+            textwrap.dedent(f"""
             <div class="info-note">
                 Foram identificados <b>{len(ref_df)}</b> exames com valor de referência parametrizado na aba
                 <b>dim_normalidade</b> da base analítica.
             </div>
-            """,
+            """),
             unsafe_allow_html=True,
         )
 
-        tabela_html = """
+        tabela_html = textwrap.dedent("""
         <div style="
             background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(243,249,245,0.96));
             border: 1px solid #D8E4DD;
@@ -1967,41 +1968,42 @@ with tab5:
                         </tr>
                     </thead>
                     <tbody>
-        """
+        """)
 
         for i, row in ref_df.iterrows():
             bg = "#FFFFFF" if i % 2 == 1 else "#F7FBF8"
-            tabela_html += f"""
-                <tr>
-                    <td style="
-                        background:{bg};
-                        padding:10px 10px;
-                        text-align:center;
-                        border-bottom:1px solid #E8EFEB;
-                        font-weight:700;
-                        color:#6B7D76;
-                    ">{i}</td>
-                    <td style="
-                        background:{bg};
-                        padding:10px 12px;
-                        border-bottom:1px solid #E8EFEB;
-                        font-weight:600;
-                    ">{row["Exame"]}</td>
-                    <td style="
-                        background:{bg};
-                        padding:10px 12px;
-                        border-bottom:1px solid #E8EFEB;
-                        line-height:1.45;
-                    ">{row["Valor de Referência"]}</td>
-                </tr>
-            """
 
-        tabela_html += """
+            tabela_html += textwrap.dedent(f"""
+            <tr>
+                <td style="
+                    background:{bg};
+                    padding:10px 10px;
+                    text-align:center;
+                    border-bottom:1px solid #E8EFEB;
+                    font-weight:700;
+                    color:#6B7D76;
+                ">{i}</td>
+                <td style="
+                    background:{bg};
+                    padding:10px 12px;
+                    border-bottom:1px solid #E8EFEB;
+                    font-weight:600;
+                ">{row["Exame"]}</td>
+                <td style="
+                    background:{bg};
+                    padding:10px 12px;
+                    border-bottom:1px solid #E8EFEB;
+                    line-height:1.45;
+                ">{row["Valor de Referência"]}</td>
+            </tr>
+            """)
+
+        tabela_html += textwrap.dedent("""
                     </tbody>
                 </table>
             </div>
         </div>
-        """
+        """)
 
         st.markdown(tabela_html, unsafe_allow_html=True)
 
