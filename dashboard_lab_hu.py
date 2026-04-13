@@ -518,11 +518,20 @@ def carregar_dados(path="dados_lab_hu.xlsx"):
     df = pd.read_excel(path, sheet_name="data")
     dim = pd.read_excel(path, sheet_name="dim_exames")
 
-    for col in ["Interpretação", "Descrição Exame", "Setor Solicitante", "Unidade"]:
+    for col in ["Interpretação", "Setor Solicitante", "Unidade"]:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().str.upper()
 
-    dim["Descrição Exame"] = dim["Descrição Exame"].astype(str).str.strip().str.upper()
+    # Mantém o texto original do exame para exibição
+    if "Descrição Exame" in df.columns:
+        df["Descrição Exame"] = df["Descrição Exame"].astype(str).str.strip()
+
+    if "Descrição Exame" in dim.columns:
+        dim["Descrição Exame"] = dim["Descrição Exame"].astype(str).str.strip()
+
+    # Cria chave padronizada apenas para joins / maps
+    df["Descricao_Exame_Chave"] = df["Descrição Exame"].str.upper()
+    dim["Descricao_Exame_Chave"] = dim["Descrição Exame"].str.upper()
 
     # Padroniza nomes alternativos das novas colunas
     col_ref = None
@@ -556,11 +565,11 @@ def carregar_dados(path="dados_lab_hu.xlsx"):
         labels=["Madrugada", "Manhã", "Tarde", "Noite"],
     )
 
-    custo_map = dict(zip(dim["Descrição Exame"], dim["CUSTO_EXAME"]))
-    intervalo_map = dict(zip(dim["Descrição Exame"], dim["INTERVALOS_CLINICOS"]))
+    custo_map = dict(zip(dim["Descricao_Exame_Chave"], dim["CUSTO_EXAME"]))
+    intervalo_map = dict(zip(dim["Descricao_Exame_Chave"], dim["INTERVALOS_CLINICOS"]))
 
-    df["Custo_Unit"] = df["Descrição Exame"].map(custo_map).fillna(3.50)
-    df["Intervalo_Clinico_h"] = df["Descrição Exame"].map(intervalo_map).fillna(24)
+    df["Custo_Unit"] = df["Descricao_Exame_Chave"].map(custo_map).fillna(3.50)
+    df["Intervalo_Clinico_h"] = df["Descricao_Exame_Chave"].map(intervalo_map).fillna(24)
 
     df["Flag_Normal"] = (df["Interpretação"] == "NORMAL").astype(int)
     df["Flag_Alterado"] = (df["Interpretação"] != "NORMAL").astype(int)
@@ -600,7 +609,7 @@ def carregar_dados(path="dados_lab_hu.xlsx"):
         col_lim: "Limites de Decisão Clínica",
     })
 
-    dim_ref["Exame"] = dim_ref["Exame"].astype(str).str.title()
+    dim_ref["Exame"] = dim_ref["Exame"].astype(str).str.strip()
     dim_ref["Custo Unitário"] = pd.to_numeric(
         dim_ref["Custo Unitário"], errors="coerce"
     ).fillna(0)
@@ -923,7 +932,7 @@ with tab1:
         fig = go.Figure()
         fig.add_trace(
             go.Bar(
-                y=[truncate_text(x.title(), 34) for x in exame_norm["Descrição Exame"]],
+                y=[truncate_text(x, 34) for x in exame_norm["Descrição Exame"]],
                 x=exame_norm["Pct_Normal"],
                 orientation="h",
                 marker=dict(
@@ -971,7 +980,7 @@ with tab1:
         fig = go.Figure(
             go.Heatmap(
                 z=piv.values,
-                x=[truncate_text(x.title(), 22) for x in piv.columns],
+                x=[truncate_text(x, 22) for x in piv.columns],
                 y=[truncate_text(y, 24) for y in piv.index],
                 colorscale=[
                     [0.00, "#F6D9D5"],
@@ -1066,7 +1075,7 @@ with tab2:
         fig = go.Figure()
         fig.add_trace(
             go.Bar(
-                y=[truncate_text(x.title(), 34) for x in rep_ex["Descrição Exame"]],
+                y=[truncate_text(x, 34) for x in rep_ex["Descrição Exame"]],
                 x=rep_ex["Alerta"],
                 orientation="h",
                 name="Alerta",
@@ -1075,7 +1084,7 @@ with tab2:
         )
         fig.add_trace(
             go.Bar(
-                y=[truncate_text(x.title(), 34) for x in rep_ex["Descrição Exame"]],
+                y=[truncate_text(x, 34) for x in rep_ex["Descrição Exame"]],
                 x=rep_ex["Criticas"],
                 orientation="h",
                 name="Crítica",
@@ -1460,7 +1469,7 @@ with tab3:
                 )
                 resumo_exame["Pct_Normal"] = (resumo_exame["Pct_Normal"] * 100).round(1)
 
-                resumo_exame["Exame_txt"] = resumo_exame["Descrição Exame"].str.title()
+                resumo_exame["Exame_txt"] = resumo_exame["Descrição Exame"].astype(str).str.strip()
                 resumo_exame["Qtd_txt"] = resumo_exame["Qtd_Exames"].apply(format_int)
                 resumo_exame["Pct_txt"] = resumo_exame["Pct_Normal"].apply(format_pct)
 
@@ -1528,7 +1537,7 @@ with tab3:
                                 line=dict(color="white", width=1.4)
                             ),
                             customdata=np.stack([
-                                normais_sub["Descrição Exame"].str.title(),
+                                normais_sub["Descrição Exame"].astype(str).str.strip(),
                                 normais_sub["Resultado"]
                             ], axis=1),
 
@@ -1553,7 +1562,7 @@ with tab3:
                                 line=dict(color="white", width=1.4)
                             ),
                             customdata=np.stack([
-                                alterados_sub["Descrição Exame"].str.title(),
+                                alterados_sub["Descrição Exame"].astype(str).str.strip(),
                                 alterados_sub["Resultado"]
                             ], axis=1),
 
@@ -1578,7 +1587,7 @@ with tab3:
                                 line=dict(color=COLORS["alert"], width=2.7)
                             ),
                             customdata=np.stack([
-                                repetidos_sub["Descrição Exame"].str.title(),
+                                repetidos_sub["Descrição Exame"].astype(str).str.strip(),
                                 repetidos_sub["Resultado"]
                             ], axis=1),
                             hovertemplate=(
@@ -1912,7 +1921,7 @@ with tab4:
 
     fig = go.Figure(
         go.Scatter(
-            x=[truncate_text(x.title(), 20) for x in combo_plot["Descrição Exame"]],
+            x=[truncate_text(x, 20) for x in combo_plot["Descrição Exame"]],
             y=[truncate_text(x, 22) for x in combo_plot["Setor Solicitante"]],
             mode="markers",
             marker=dict(
