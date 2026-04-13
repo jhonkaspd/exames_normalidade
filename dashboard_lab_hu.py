@@ -11,6 +11,7 @@ warnings.filterwarnings("ignore")
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import textwrap
 import streamlit as st
 
 
@@ -1938,152 +1939,247 @@ with tab4:
 # TAB 5 — VALORES DE REFERÊNCIA
 # ============================================================
 with tab5:
-    section_header("Parâmetros clínicos utilizados na análise")
+    section_header("Valores de referência utilizados na análise")
 
     st.markdown(
-        """
-<div class="caption-box">
-    <b>Objetivo desta aba:</b> apresentar de forma transparente os parâmetros
-    considerados no dashboard para cada exame, incluindo custo unitário,
-    intervalo clínico, faixa de referência laboratorial e limites de decisão clínica.
-</div>
-        """,
+        textwrap.dedent("""
+        <div class="caption-box">
+            <b>Objetivo:</b> explicitar os intervalos e pontos de corte considerados para interpretação de normalidade
+            dos exames utilizados neste estudo, promovendo transparência analítica e alinhamento clínico.
+        </div>
+        """),
         unsafe_allow_html=True,
     )
 
-    info_note(
-        "Os valores abaixo são exibidos como referência institucional do painel. "
-        "Eles servem para dar transparência aos pontos de corte adotados na análise, "
-        "mas devem sempre ser interpretados em conjunto com contexto clínico e protocolo assistencial."
-    )
+    ref_df = dim_ref.copy()
 
-    dim_ref_view = dim_ref.copy()
+    if ref_df.empty:
+        st.info("A aba 'dim_exames' não possui dados para exibição.")
+    else:
+        ref_df = ref_df.copy()
 
-    dim_ref_view["Custo Unitário"] = dim_ref_view["Custo Unitário"].apply(
-        lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-        if pd.notna(x) else "-"
-    )
+        colunas_esperadas = [
+            "Exame",
+            "Custo Unitário",
+            "Intervalos Clínicos",
+            "Valores de Referência",
+            "Limites de Decisão Clínica",
+        ]
 
-    dim_ref_view["Intervalos Clínicos"] = dim_ref_view["Intervalos Clínicos"].apply(
-        lambda x: f"{int(x)} h" if pd.notna(x) else "-"
-    )
+        for col in colunas_esperadas:
+            if col not in ref_df.columns:
+                ref_df[col] = "-"
 
-    for col in [
-        "Exame",
-        "Custo Unitário",
-        "Intervalos Clínicos",
-        "Valores de Referência",
-        "Limites de Decisão Clínica",
-    ]:
-        dim_ref_view[col] = (
-            dim_ref_view[col]
-            .fillna("-")
-            .astype(str)
-            .str.replace("\n", "<br>", regex=False)
+        ref_df = ref_df[colunas_esperadas]
+
+        ref_df["Exame"] = ref_df["Exame"].astype(str).str.strip()
+        ref_df["Custo Unitário"] = pd.to_numeric(
+            ref_df["Custo Unitário"], errors="coerce"
+        )
+        ref_df["Intervalos Clínicos"] = pd.to_numeric(
+            ref_df["Intervalos Clínicos"], errors="coerce"
         )
 
-    tabela_html = dim_ref_view.to_html(
-        index=False,
-        escape=False,
-        classes="ref-table"
-    )
+        ref_df["Custo Unitário"] = ref_df["Custo Unitário"].apply(
+            lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            if pd.notna(x) else "-"
+        )
 
-    html_ref = f"""
-<style>
-.ref-table-wrap {{
-    background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(243,249,245,0.96));
-    border: 1px solid {COLORS["border"]};
-    border-radius: 18px;
-    padding: 0.75rem 0.85rem 0.9rem 0.85rem;
-    box-shadow: 0 10px 24px rgba(0,75,82,0.05);
-    margin-top: 0.35rem;
-    overflow: visible;
-}}
+        ref_df["Intervalos Clínicos"] = ref_df["Intervalos Clínicos"].apply(
+            lambda x: f"{int(x)} h" if pd.notna(x) else "-"
+        )
 
-.ref-table {{
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: auto;
-    font-size: 0.88rem;
-    color: {COLORS["text"]};
-}}
+        for col in ["Valores de Referência", "Limites de Decisão Clínica"]:
+            ref_df[col] = (
+                ref_df[col]
+                .fillna("-")
+                .astype(str)
+                .str.strip()
+                .replace("", "-")
+            )
 
-.ref-table thead th {{
-    background: #F3F8F5;
-    color: {COLORS["muted"]};
-    font-size: 0.78rem;
-    font-weight: 800;
-    text-align: left;
-    padding: 0.72rem 0.55rem;
-    border-bottom: 1px solid {COLORS["border"]};
-    border-right: 1px solid {COLORS["grid"]};
-    vertical-align: top;
-    white-space: normal;
-    word-break: break-word;
-}}
+        ref_df = ref_df.sort_values("Exame").reset_index(drop=True)
+        ref_df.index = ref_df.index + 1
 
-.ref-table thead th:last-child {{
-    border-right: none;
-}}
+        st.markdown(
+            textwrap.dedent(f"""
+            <div class="info-note">
+                Foram identificados <b>{len(ref_df)}</b> exames parametrizados na base analítica,
+                com exibição de custo unitário, intervalo clínico, valor de referência e limite de decisão clínica.
+            </div>
+            """),
+            unsafe_allow_html=True,
+        )
 
-.ref-table tbody td {{
-    padding: 0.62rem 0.55rem;
-    border-bottom: 1px solid {COLORS["grid"]};
-    border-right: 1px solid {COLORS["grid"]};
-    vertical-align: top;
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-    line-height: 1.4;
-}}
+        def html_escape(valor):
+            return (
+                str(valor)
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace('"', "&quot;")
+                .replace("\n", "<br>")
+            )
 
-.ref-table tbody td:last-child {{
-    border-right: none;
-}}
+        tabela_html = textwrap.dedent("""
+        <div style="
+            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(243,249,245,0.96));
+            border: 1px solid #D8E4DD;
+            border-radius: 18px;
+            padding: 0.35rem 0.35rem 0.5rem 0.35rem;
+            box-shadow: 0 10px 24px rgba(0,75,82,0.05);
+            overflow: visible;
+        ">
+            <table style="
+                width:100%;
+                border-collapse:separate;
+                border-spacing:0;
+                font-size:0.88rem;
+                color:#18302B;
+                table-layout:auto;
+            ">
+                <thead>
+                    <tr>
+                        <th style="
+                            background:#073B3A;
+                            color:white;
+                            text-align:center;
+                            padding:12px 10px;
+                            font-weight:800;
+                            border-top-left-radius:14px;
+                            width:56px;
+                            white-space:nowrap;
+                        ">#</th>
 
-.ref-table tbody tr:hover {{
-    background: rgba(0,153,93,0.035);
-}}
+                        <th style="
+                            background:#073B3A;
+                            color:white;
+                            text-align:left;
+                            padding:12px 12px;
+                            font-weight:800;
+                            width:18%;
+                        ">Exame</th>
 
-.ref-table th:nth-child(1),
-.ref-table td:nth-child(1) {{
-    width: 18%;
-    min-width: 150px;
-}}
+                        <th style="
+                            background:#073B3A;
+                            color:white;
+                            text-align:left;
+                            padding:12px 12px;
+                            font-weight:800;
+                            width:11%;
+                            white-space:nowrap;
+                        ">Custo Unitário</th>
 
-.ref-table th:nth-child(2),
-.ref-table td:nth-child(2) {{
-    width: 11%;
-    min-width: 95px;
-    white-space: nowrap;
-}}
+                        <th style="
+                            background:#073B3A;
+                            color:white;
+                            text-align:left;
+                            padding:12px 12px;
+                            font-weight:800;
+                            width:11%;
+                            white-space:nowrap;
+                        ">Intervalos Clínicos</th>
 
-.ref-table th:nth-child(3),
-.ref-table td:nth-child(3) {{
-    width: 11%;
-    min-width: 105px;
-    white-space: nowrap;
-}}
+                        <th style="
+                            background:#073B3A;
+                            color:white;
+                            text-align:left;
+                            padding:12px 12px;
+                            font-weight:800;
+                            width:28%;
+                        ">Valores de Referência</th>
 
-.ref-table th:nth-child(4),
-.ref-table td:nth-child(4) {{
-    width: 28%;
-    min-width: 220px;
-}}
+                        <th style="
+                            background:#073B3A;
+                            color:white;
+                            text-align:left;
+                            padding:12px 12px;
+                            font-weight:800;
+                            border-top-right-radius:14px;
+                            width:32%;
+                        ">Limites de Decisão Clínica</th>
+                    </tr>
+                </thead>
+                <tbody>
+        """)
 
-.ref-table th:nth-child(5),
-.ref-table td:nth-child(5) {{
-    width: 32%;
-    min-width: 260px;
-}}
-</style>
+        for i, row in ref_df.iterrows():
+            bg = "#FFFFFF" if i % 2 == 1 else "#F7FBF8"
 
-<div class="ref-table-wrap">
-{tabela_html}
-</div>
-"""
+            tabela_html += textwrap.dedent(f"""
+                <tr>
+                    <td style="
+                        background:{bg};
+                        padding:10px 10px;
+                        text-align:center;
+                        border-bottom:1px solid #E8EFEB;
+                        font-weight:700;
+                        color:#6B7D76;
+                        vertical-align:top;
+                        white-space:nowrap;
+                    ">{i}</td>
 
-    st.markdown(html_ref, unsafe_allow_html=True)
+                    <td style="
+                        background:{bg};
+                        padding:10px 12px;
+                        border-bottom:1px solid #E8EFEB;
+                        font-weight:600;
+                        vertical-align:top;
+                        word-break:break-word;
+                        overflow-wrap:anywhere;
+                        line-height:1.45;
+                    ">{html_escape(row["Exame"])}</td>
+
+                    <td style="
+                        background:{bg};
+                        padding:10px 12px;
+                        border-bottom:1px solid #E8EFEB;
+                        vertical-align:top;
+                        white-space:nowrap;
+                    ">{html_escape(row["Custo Unitário"])}</td>
+
+                    <td style="
+                        background:{bg};
+                        padding:10px 12px;
+                        border-bottom:1px solid #E8EFEB;
+                        vertical-align:top;
+                        white-space:nowrap;
+                    ">{html_escape(row["Intervalos Clínicos"])}</td>
+
+                    <td style="
+                        background:{bg};
+                        padding:10px 12px;
+                        border-bottom:1px solid #E8EFEB;
+                        vertical-align:top;
+                        word-break:break-word;
+                        overflow-wrap:anywhere;
+                        line-height:1.45;
+                    ">{html_escape(row["Valores de Referência"])}</td>
+
+                    <td style="
+                        background:{bg};
+                        padding:10px 12px;
+                        border-bottom:1px solid #E8EFEB;
+                        vertical-align:top;
+                        word-break:break-word;
+                        overflow-wrap:anywhere;
+                        line-height:1.45;
+                    ">{html_escape(row["Limites de Decisão Clínica"])}</td>
+                </tr>
+            """)
+
+        tabela_html += textwrap.dedent("""
+                </tbody>
+            </table>
+        </div>
+        """)
+
+        st.markdown(tabela_html, unsafe_allow_html=True)
+
+        info_note(
+            "Recomendação: esta tabela deve ser revisada sempre que houver atualização de protocolo laboratorial, "
+            "mudança de método analítico ou revisão de faixas etárias e unidades de medida."
+        )
 
 # ============================================================
 # RODAPÉ
