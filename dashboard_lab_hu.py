@@ -1961,6 +1961,7 @@ with tab5:
 
     dim_ref_view["Custo Unitário"] = dim_ref_view["Custo Unitário"].apply(
         lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        if pd.notna(x) else "-"
     )
 
     dim_ref_view["Intervalos Clínicos"] = dim_ref_view["Intervalos Clínicos"].apply(
@@ -1974,143 +1975,116 @@ with tab5:
         "Valores de Referência",
         "Limites de Decisão Clínica",
     ]:
-        dim_ref_view[col] = dim_ref_view[col].fillna("-").astype(str)
-
-    def esc_html(txt):
-        return (
-            str(txt)
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;")
+        dim_ref_view[col] = (
+            dim_ref_view[col]
+            .fillna("-")
+            .astype(str)
+            .str.replace("\n", "<br>", regex=False)
         )
 
-    html_rows = []
-    for _, row in dim_ref_view.iterrows():
-        html_rows.append(
-            f"""
-            <tr>
-                <td>{esc_html(row["Exame"])}</td>
-                <td>{esc_html(row["Custo Unitário"])}</td>
-                <td>{esc_html(row["Intervalos Clínicos"])}</td>
-                <td>{esc_html(row["Valores de Referência"])}</td>
-                <td>{esc_html(row["Limites de Decisão Clínica"])}</td>
-            </tr>
-            """
-        )
+    tabela_html = dim_ref_view.to_html(
+        index=False,
+        escape=False,
+        classes="ref-table"
+    )
 
-    html_tabela = f"""
-    <style>
-    .ref-table-wrap {{
-        background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(243,249,245,0.96));
-        border: 1px solid {COLORS["border"]};
-        border-radius: 18px;
-        padding: 0.75rem 0.85rem 0.9rem 0.85rem;
-        box-shadow: 0 10px 24px rgba(0,75,82,0.05);
-        margin-top: 0.35rem;
-        overflow: visible;
-    }}
+    st.markdown(
+        f"""
+        <style>
+        .ref-table-wrap {{
+            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(243,249,245,0.96));
+            border: 1px solid {COLORS["border"]};
+            border-radius: 18px;
+            padding: 0.75rem 0.85rem 0.9rem 0.85rem;
+            box-shadow: 0 10px 24px rgba(0,75,82,0.05);
+            margin-top: 0.35rem;
+            overflow: visible;
+        }}
 
-    .ref-table {{
-        width: 100%;
-        border-collapse: collapse;
-        table-layout: auto;
-        font-size: 0.88rem;
-        color: {COLORS["text"]};
-    }}
+        .ref-table {{
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: auto;
+            font-size: 0.88rem;
+            color: {COLORS["text"]};
+        }}
 
-    .ref-table thead th {{
-        position: sticky;
-        top: 0;
-        background: #F3F8F5;
-        color: {COLORS["muted"]};
-        font-size: 0.78rem;
-        font-weight: 800;
-        letter-spacing: 0.01em;
-        text-align: left;
-        padding: 0.72rem 0.55rem;
-        border-bottom: 1px solid {COLORS["border"]};
-        border-right: 1px solid {COLORS["grid"]};
-        vertical-align: top;
-        white-space: normal;
-        word-break: break-word;
-    }}
+        .ref-table thead th {{
+            background: #F3F8F5;
+            color: {COLORS["muted"]};
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-align: left;
+            padding: 0.72rem 0.55rem;
+            border-bottom: 1px solid {COLORS["border"]};
+            border-right: 1px solid {COLORS["grid"]};
+            vertical-align: top;
+            white-space: normal;
+            word-break: break-word;
+        }}
 
-    .ref-table thead th:last-child {{
-        border-right: none;
-    }}
+        .ref-table thead th:last-child {{
+            border-right: none;
+        }}
 
-    .ref-table tbody td {{
-        padding: 0.62rem 0.55rem;
-        border-bottom: 1px solid {COLORS["grid"]};
-        border-right: 1px solid {COLORS["grid"]};
-        vertical-align: top;
-        white-space: normal;
-        word-break: break-word;
-        overflow-wrap: anywhere;
-        line-height: 1.4;
-    }}
+        .ref-table tbody td {{
+            padding: 0.62rem 0.55rem;
+            border-bottom: 1px solid {COLORS["grid"]};
+            border-right: 1px solid {COLORS["grid"]};
+            vertical-align: top;
+            white-space: normal;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            line-height: 1.4;
+        }}
 
-    .ref-table tbody td:last-child {{
-        border-right: none;
-    }}
+        .ref-table tbody td:last-child {{
+            border-right: none;
+        }}
 
-    .ref-table tbody tr:hover {{
-        background: rgba(0,153,93,0.035);
-    }}
+        .ref-table tbody tr:hover {{
+            background: rgba(0,153,93,0.035);
+        }}
 
-    .ref-table th:nth-child(1),
-    .ref-table td:nth-child(1) {{
-        width: 18%;
-        min-width: 150px;
-    }}
+        .ref-table th:nth-child(1),
+        .ref-table td:nth-child(1) {{
+            width: 18%;
+            min-width: 150px;
+        }}
 
-    .ref-table th:nth-child(2),
-    .ref-table td:nth-child(2) {{
-        width: 11%;
-        min-width: 95px;
-        white-space: nowrap;
-    }}
+        .ref-table th:nth-child(2),
+        .ref-table td:nth-child(2) {{
+            width: 11%;
+            min-width: 95px;
+            white-space: nowrap;
+        }}
 
-    .ref-table th:nth-child(3),
-    .ref-table td:nth-child(3) {{
-        width: 11%;
-        min-width: 105px;
-        white-space: nowrap;
-    }}
+        .ref-table th:nth-child(3),
+        .ref-table td:nth-child(3) {{
+            width: 11%;
+            min-width: 105px;
+            white-space: nowrap;
+        }}
 
-    .ref-table th:nth-child(4),
-    .ref-table td:nth-child(4) {{
-        width: 28%;
-        min-width: 220px;
-    }}
+        .ref-table th:nth-child(4),
+        .ref-table td:nth-child(4) {{
+            width: 28%;
+            min-width: 220px;
+        }}
 
-    .ref-table th:nth-child(5),
-    .ref-table td:nth-child(5) {{
-        width: 32%;
-        min-width: 260px;
-    }}
-    </style>
+        .ref-table th:nth-child(5),
+        .ref-table td:nth-child(5) {{
+            width: 32%;
+            min-width: 260px;
+        }}
+        </style>
 
-    <div class="ref-table-wrap">
-        <table class="ref-table">
-            <thead>
-                <tr>
-                    <th>Exame</th>
-                    <th>Custo Unitário</th>
-                    <th>Intervalos Clínicos</th>
-                    <th>Valores de Referência</th>
-                    <th>Limites de Decisão Clínica</th>
-                </tr>
-            </thead>
-            <tbody>
-                {''.join(html_rows)}
-            </tbody>
-        </table>
-    </div>
-    """
-
-    st.markdown(html_tabela, unsafe_allow_html=True)
+        <div class="ref-table-wrap">
+            {tabela_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 # ============================================================
 # RODAPÉ
@@ -2118,7 +2092,7 @@ with tab5:
 st.markdown(
     """
     <div class="footer-note">
-        Lab Vision · Hospital Unimed · Monitoramento de repetições laboratoriais ·
+        Lab Vision · Laboratório Unimed · Monitoramento de repetições laboratoriais ·
         Painel refinado com foco em leitura executiva, priorização assistencial e impacto financeiro.
     </div>
     """,
