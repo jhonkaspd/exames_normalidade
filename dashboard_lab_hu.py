@@ -2089,12 +2089,12 @@ with tab5:
     }}
 
     .col-exame {{
-        width: 100%;
+        width: 10%;
         font-weight: 600;
     }}
 
     .col-custo {{
-        width: 100%;
+        width: 10%;
         white-space: nowrap;
         text-align: left;
     }}
@@ -2106,11 +2106,11 @@ with tab5:
     }}
 
     .col-ref {{
-        width: 33%;
+        width: 50%;
     }}
 
     .col-limite {{
-        width: 26%;
+        width: 20%;
         text-align: center;
         vertical-align: middle;
     }}
@@ -2138,7 +2138,7 @@ with tab5:
 """
 
         altura_tabela = max(520, 78 + len(ref_df) * 44)
-        components.html(tabela_html, height=altura_tabela, scrolling=False)
+        components.html(tabela_html, height=altura_tabela, scrolling=True)
 
         info_note(
             "Recomendação: esta tabela deve ser revisada sempre que houver atualização de protocolo laboratorial, "
