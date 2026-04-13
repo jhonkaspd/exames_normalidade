@@ -1997,7 +1997,6 @@ with tab5:
             )
 
         ref_df = ref_df.sort_values("Exame").reset_index(drop=True)
-        ref_df.index = ref_df.index + 1
 
         st.markdown(
             textwrap.dedent(f"""
@@ -2014,11 +2013,10 @@ with tab5:
 
         linhas_html = []
         for i, row in ref_df.iterrows():
-            bg = "#FFFFFF" if i % 2 == 1 else "#F7FBF8"
+            bg = "#FFFFFF" if i % 2 == 0 else "#F7FBF8"
 
             linhas_html.append(f"""
             <tr>
-                <td class="col-idx" style="background:{bg};">{i}</td>
                 <td class="col-exame" style="background:{bg};">{esc(row["Exame"])}</td>
                 <td class="col-custo" style="background:{bg};">{esc(row["Custo Unitário"])}</td>
                 <td class="col-intervalo" style="background:{bg};">{esc(row["Intervalos Clínicos"])}</td>
@@ -2064,17 +2062,17 @@ with tab5:
         text-align: left;
         padding: 12px 12px;
         font-weight: 800;
-        vertical-align: top;
+        vertical-align: middle;
         border-bottom: 1px solid #D8E4DD;
     }}
 
     thead th:first-child {{
         border-top-left-radius: 14px;
-        text-align: center;
     }}
 
     thead th:last-child {{
         border-top-right-radius: 14px;
+        text-align: center;
     }}
 
     tbody td {{
@@ -2090,35 +2088,31 @@ with tab5:
         background: #F1F8F4 !important;
     }}
 
-    .col-idx {{
-        width: 4%;
-        text-align: center;
-        font-weight: 700;
-        color: #6B7D76;
-        white-space: nowrap;
-    }}
-
     .col-exame {{
-        width: 16%;
+        width: 22%;
         font-weight: 600;
     }}
 
     .col-custo {{
-        width: 10%;
+        width: 9%;
         white-space: nowrap;
+        text-align: left;
     }}
 
     .col-intervalo {{
         width: 10%;
         white-space: nowrap;
+        text-align: left;
     }}
 
     .col-ref {{
-        width: 28%;
+        width: 33%;
     }}
 
     .col-limite {{
-        width: 32%;
+        width: 26%;
+        text-align: center;
+        vertical-align: middle;
     }}
 </style>
 </head>
@@ -2127,7 +2121,6 @@ with tab5:
         <table>
             <thead>
                 <tr>
-                    <th>#</th>
                     <th>Exame</th>
                     <th>Custo Unitário</th>
                     <th>Intervalos Clínicos</th>
@@ -2145,7 +2138,6 @@ with tab5:
 """
 
         altura_tabela = max(520, 78 + len(ref_df) * 44)
-
         components.html(tabela_html, height=altura_tabela, scrolling=False)
 
         info_note(
