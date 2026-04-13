@@ -2049,7 +2049,6 @@ with tab5:
 
     table {{
         width: 100%;
-        max-width: 1400px;
         margin: 0 auto; 
         border-collapse: separate;
         border-spacing: 0;
