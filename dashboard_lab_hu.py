@@ -1084,6 +1084,17 @@ with tab2:
             xaxis=dict(title=None, showgrid=True, gridcolor=COLORS["grid"]),
             yaxis=dict(title=None, showgrid=False),
         )
+
+        fig.update_layout(
+            legend=dict(
+                orientation="h",
+                yanchor="top",
+                y=-0.20,
+                xanchor="center",
+                x=0.5
+            ),
+            margin=dict(t=60, b=70)  # espaço para legenda
+        )
         st.plotly_chart(fig, use_container_width=True)
 
         info_note(
@@ -1927,7 +1938,7 @@ with tab4:
 # TAB 5 — VALORES DE REFERÊNCIA
 # ============================================================
 with tab5:
-    section_header("Parâmetros utilizados na análise")
+    section_header("Parâmetros clínicos utilizados na análise")
 
     st.markdown(
         """
@@ -1940,54 +1951,6 @@ with tab5:
         unsafe_allow_html=True,
     )
 
-    total_exames_dim = len(dim_ref)
-    exames_com_limite = (dim_ref["Limites de Decisão Clínica"] != "-").sum()
-    exames_com_referencia = (dim_ref["Valores de Referência"] != "-").sum()
-
-    c_ref1, c_ref2, c_ref3 = st.columns(3)
-
-    with c_ref1:
-        st.markdown(
-            kpi_card(
-                "Exames parametrizados",
-                format_int(total_exames_dim),
-                "Exames cadastrados na dimensão clínica",
-                COLORS["deep"],
-                icon="🧪",
-                fill=1,
-                accent_2=COLORS["primary"],
-            ),
-            unsafe_allow_html=True,
-        )
-
-    with c_ref2:
-        st.markdown(
-            kpi_card(
-                "Com referência",
-                format_int(exames_com_referencia),
-                "Exames com faixa de referência informada",
-                COLORS["primary"],
-                icon="📏",
-                fill=(exames_com_referencia / total_exames_dim) if total_exames_dim else 0,
-                accent_2=COLORS["primary_light"],
-            ),
-            unsafe_allow_html=True,
-        )
-
-    with c_ref3:
-        st.markdown(
-            kpi_card(
-                "Com limite clínico",
-                format_int(exames_com_limite),
-                "Exames com limite de decisão clínica definido",
-                COLORS["alert"],
-                icon="🚨",
-                fill=(exames_com_limite / total_exames_dim) if total_exames_dim else 0,
-                accent_2=COLORS["danger"],
-            ),
-            unsafe_allow_html=True,
-        )
-
     info_note(
         "Os valores abaixo são exibidos como referência institucional do painel. "
         "Eles servem para dar transparência aos pontos de corte adotados na análise, "
@@ -1995,42 +1958,159 @@ with tab5:
     )
 
     dim_ref_view = dim_ref.copy()
+
     dim_ref_view["Custo Unitário"] = dim_ref_view["Custo Unitário"].apply(
         lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     )
+
     dim_ref_view["Intervalos Clínicos"] = dim_ref_view["Intervalos Clínicos"].apply(
-        lambda x: f"{int(x)} h"
+        lambda x: f"{int(x)} h" if pd.notna(x) else "-"
     )
 
-    st.markdown(
-        """
-        <div style="
-            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(243,249,245,0.96));
-            border: 1px solid #D8E4DD;
-            border-radius: 18px;
-            padding: 0.4rem 0.6rem 0.8rem 0.6rem;
-            box-shadow: 0 10px 24px rgba(0,75,82,0.05);
-            margin-top: 0.35rem;
-        ">
-        """,
-        unsafe_allow_html=True,
-    )
+    for col in [
+        "Exame",
+        "Custo Unitário",
+        "Intervalos Clínicos",
+        "Valores de Referência",
+        "Limites de Decisão Clínica",
+    ]:
+        dim_ref_view[col] = dim_ref_view[col].fillna("-").astype(str)
 
-    st.dataframe(
-        dim_ref_view,
-        use_container_width=True,
-        hide_index=True,
-        height=560,
-        column_config={
-            "Exame": st.column_config.TextColumn("Exame", width="medium"),
-            "Custo Unitário": st.column_config.TextColumn("Custo Unitário", width="small"),
-            "Intervalos Clínicos": st.column_config.TextColumn("Intervalos Clínicos", width="small"),
-            "Valores de Referência": st.column_config.TextColumn("Valores de Referência", width="medium"),
-            "Limites de Decisão Clínica": st.column_config.TextColumn("Limites de Decisão Clínica", width="large"),
-        },
-    )
+    def esc_html(txt):
+        return (
+            str(txt)
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+        )
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    html_rows = []
+    for _, row in dim_ref_view.iterrows():
+        html_rows.append(
+            f"""
+            <tr>
+                <td>{esc_html(row["Exame"])}</td>
+                <td>{esc_html(row["Custo Unitário"])}</td>
+                <td>{esc_html(row["Intervalos Clínicos"])}</td>
+                <td>{esc_html(row["Valores de Referência"])}</td>
+                <td>{esc_html(row["Limites de Decisão Clínica"])}</td>
+            </tr>
+            """
+        )
+
+    html_tabela = f"""
+    <style>
+    .ref-table-wrap {{
+        background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(243,249,245,0.96));
+        border: 1px solid {COLORS["border"]};
+        border-radius: 18px;
+        padding: 0.75rem 0.85rem 0.9rem 0.85rem;
+        box-shadow: 0 10px 24px rgba(0,75,82,0.05);
+        margin-top: 0.35rem;
+        overflow: visible;
+    }}
+
+    .ref-table {{
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: auto;
+        font-size: 0.88rem;
+        color: {COLORS["text"]};
+    }}
+
+    .ref-table thead th {{
+        position: sticky;
+        top: 0;
+        background: #F3F8F5;
+        color: {COLORS["muted"]};
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+        text-align: left;
+        padding: 0.72rem 0.55rem;
+        border-bottom: 1px solid {COLORS["border"]};
+        border-right: 1px solid {COLORS["grid"]};
+        vertical-align: top;
+        white-space: normal;
+        word-break: break-word;
+    }}
+
+    .ref-table thead th:last-child {{
+        border-right: none;
+    }}
+
+    .ref-table tbody td {{
+        padding: 0.62rem 0.55rem;
+        border-bottom: 1px solid {COLORS["grid"]};
+        border-right: 1px solid {COLORS["grid"]};
+        vertical-align: top;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        line-height: 1.4;
+    }}
+
+    .ref-table tbody td:last-child {{
+        border-right: none;
+    }}
+
+    .ref-table tbody tr:hover {{
+        background: rgba(0,153,93,0.035);
+    }}
+
+    .ref-table th:nth-child(1),
+    .ref-table td:nth-child(1) {{
+        width: 18%;
+        min-width: 150px;
+    }}
+
+    .ref-table th:nth-child(2),
+    .ref-table td:nth-child(2) {{
+        width: 11%;
+        min-width: 95px;
+        white-space: nowrap;
+    }}
+
+    .ref-table th:nth-child(3),
+    .ref-table td:nth-child(3) {{
+        width: 11%;
+        min-width: 105px;
+        white-space: nowrap;
+    }}
+
+    .ref-table th:nth-child(4),
+    .ref-table td:nth-child(4) {{
+        width: 28%;
+        min-width: 220px;
+    }}
+
+    .ref-table th:nth-child(5),
+    .ref-table td:nth-child(5) {{
+        width: 32%;
+        min-width: 260px;
+    }}
+    </style>
+
+    <div class="ref-table-wrap">
+        <table class="ref-table">
+            <thead>
+                <tr>
+                    <th>Exame</th>
+                    <th>Custo Unitário</th>
+                    <th>Intervalos Clínicos</th>
+                    <th>Valores de Referência</th>
+                    <th>Limites de Decisão Clínica</th>
+                </tr>
+            </thead>
+            <tbody>
+                {''.join(html_rows)}
+            </tbody>
+        </table>
+    </div>
+    """
+
+    st.markdown(html_tabela, unsafe_allow_html=True)
 
 # ============================================================
 # RODAPÉ
