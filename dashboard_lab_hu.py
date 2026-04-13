@@ -2089,12 +2089,12 @@ with tab5:
     }}
 
     .col-exame {{
-        width: 22%;
+        width: 100%;
         font-weight: 600;
     }}
 
     .col-custo {{
-        width: 9%;
+        width: 100%;
         white-space: nowrap;
         text-align: left;
     }}
