@@ -2049,6 +2049,8 @@ with tab5:
 
     table {{
         width: 100%;
+        max-width: 1400px;
+        margin: 0 auto; 
         border-collapse: separate;
         border-spacing: 0;
         table-layout: auto;
@@ -2089,7 +2091,8 @@ with tab5:
     }}
 
     .col-exame {{
-        width: 1%;
+        width: 18%;
+        min-width: 160px;
         font-weight: 600;
     }}
 
@@ -2108,13 +2111,13 @@ with tab5:
     }}
 
     .col-ref {{
-        width: 1%;
+        width: 40%;
         text-align: center;
         vertical-align: middle;
     }}
 
     .col-limite {{
-        width: 1%;
+        width: 25%;
         text-align: center;
         vertical-align: middle;
     }}
