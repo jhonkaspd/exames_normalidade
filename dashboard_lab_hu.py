@@ -1999,9 +1999,6 @@ with tab5:
             """)
 
         tabela_html += textwrap.dedent("""
-                    </tbody>
-                </table>
-            </div>
         </div>
         """)
 
