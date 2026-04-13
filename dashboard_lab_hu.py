@@ -2060,7 +2060,7 @@ with tab5:
     thead th {{
         background: #073B3A;
         color: #FFFFFF;
-        text-align: left;
+        text-align: center;
         padding: 12px 12px;
         font-weight: 800;
         vertical-align: middle;
