@@ -515,12 +515,19 @@ def color_scale_list(values, vmin=0, vmax=100):
 def carregar_dados(path="dados_lab_hu.xlsx"):
     df = pd.read_excel(path, sheet_name="data")
     dim = pd.read_excel(path, sheet_name="dim_exames")
+    dim_normalidade = pd.read_excel(path, sheet_name="dim_normalidade")
 
     for col in ["Interpretação", "Descrição Exame", "Setor Solicitante", "Unidade"]:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().str.upper()
 
     dim["Descrição Exame"] = dim["Descrição Exame"].astype(str).str.strip().str.upper()
+
+    if "Exame" in dim_normalidade.columns:
+        dim_normalidade["Exame"] = dim_normalidade["Exame"].astype(str).str.strip()
+
+    if "Referência" in dim_normalidade.columns:
+        dim_normalidade["Referência"] = dim_normalidade["Referência"].astype(str).str.strip()
 
     df["DataHoraPedido"] = pd.to_datetime(df["DataHoraPedido"], errors="coerce")
     df = df.dropna(subset=["DataHoraPedido"]).copy()
@@ -566,7 +573,7 @@ def carregar_dados(path="dados_lab_hu.xlsx"):
     df["Flag_Rep_Alerta"] = ((df["Flag_Rep"] == 1) & (df["Flag_Rep_Crit"] == 0)).astype(int)
     df["Custo_Rep"] = df["Custo_Unit"] * df["Flag_Rep"]
 
-    return df
+    return df, dim_normalidade
 
 
 # ============================================================
@@ -585,7 +592,7 @@ with st.sidebar:
 
     st.markdown("<div style='height:0.85rem'></div>", unsafe_allow_html=True)
 
-    df_raw = carregar_dados()
+    df_raw, dim_normalidade = carregar_dados()
 
     data_min = pd.to_datetime(df_raw["DataHoraPedido"]).min().date()
     data_max = pd.to_datetime(df_raw["DataHoraPedido"]).max().date()
@@ -841,8 +848,8 @@ with i3:
 # ============================================================
 # TABS
 # ============================================================
-tab1, tab2, tab3, tab4 = st.tabs(
-    ["Visão geral", "Repetições", "Jornada do paciente", "Mapa integrado"]
+tab1, tab2, tab3, tab4, tab5 = st.tabs(
+    ["Visão geral", "Repetições", "Jornada do paciente", "Mapa integrado", "Valores de Referência"]
 )
 
 
@@ -1870,6 +1877,138 @@ with tab4:
     )
     st.plotly_chart(fig, use_container_width=True)
 
+# ============================================================
+# TAB 5 — VALORES DE REFERÊNCIA
+# ============================================================
+with tab5:
+    section_header("Valores de referência utilizados na análise")
+
+    st.markdown(
+        """
+        <div class="caption-box">
+            <b>Objetivo:</b> explicitar os intervalos e pontos de corte considerados para interpretação de normalidade
+            dos exames utilizados neste estudo, promovendo transparência analítica e alinhamento clínico.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    ref_df = dim_normalidade.copy()
+
+    if ref_df.empty:
+        st.info("A aba 'dim_normalidade' não possui dados.")
+    else:
+        ref_df = ref_df.rename(columns={
+            "Exame": "Exame",
+            "Referência": "Valor de Referência"
+        })
+
+        ref_df["Exame"] = ref_df["Exame"].astype(str).str.strip()
+        ref_df["Valor de Referência"] = ref_df["Valor de Referência"].astype(str).str.strip()
+
+        ref_df = ref_df.sort_values("Exame").reset_index(drop=True)
+        ref_df.index = ref_df.index + 1
+
+        st.markdown(
+            f"""
+            <div class="info-note">
+                Foram identificados <b>{len(ref_df)}</b> exames com valor de referência parametrizado na aba
+                <b>dim_normalidade</b> da base analítica.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        tabela_html = """
+        <div style="
+            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(243,249,245,0.96));
+            border: 1px solid #D8E4DD;
+            border-radius: 18px;
+            padding: 0.35rem 0.35rem 0.5rem 0.35rem;
+            box-shadow: 0 10px 24px rgba(0,75,82,0.05);
+        ">
+            <div style="overflow-x:auto;">
+                <table style="
+                    width:100%;
+                    border-collapse:separate;
+                    border-spacing:0;
+                    font-size:0.90rem;
+                    color:#18302B;
+                ">
+                    <thead>
+                        <tr>
+                            <th style="
+                                position:sticky; top:0;
+                                background:#073B3A;
+                                color:white;
+                                text-align:center;
+                                padding:12px 10px;
+                                font-weight:800;
+                                border-top-left-radius:14px;
+                                width:70px;
+                            ">#</th>
+                            <th style="
+                                position:sticky; top:0;
+                                background:#073B3A;
+                                color:white;
+                                text-align:left;
+                                padding:12px 12px;
+                                font-weight:800;
+                            ">Exame</th>
+                            <th style="
+                                position:sticky; top:0;
+                                background:#073B3A;
+                                color:white;
+                                text-align:left;
+                                padding:12px 12px;
+                                font-weight:800;
+                                border-top-right-radius:14px;
+                            ">Valor de Referência</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        """
+
+        for i, row in ref_df.iterrows():
+            bg = "#FFFFFF" if i % 2 == 1 else "#F7FBF8"
+            tabela_html += f"""
+                <tr>
+                    <td style="
+                        background:{bg};
+                        padding:10px 10px;
+                        text-align:center;
+                        border-bottom:1px solid #E8EFEB;
+                        font-weight:700;
+                        color:#6B7D76;
+                    ">{i}</td>
+                    <td style="
+                        background:{bg};
+                        padding:10px 12px;
+                        border-bottom:1px solid #E8EFEB;
+                        font-weight:600;
+                    ">{row["Exame"]}</td>
+                    <td style="
+                        background:{bg};
+                        padding:10px 12px;
+                        border-bottom:1px solid #E8EFEB;
+                        line-height:1.45;
+                    ">{row["Valor de Referência"]}</td>
+                </tr>
+            """
+
+        tabela_html += """
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        """
+
+        st.markdown(tabela_html, unsafe_allow_html=True)
+
+        info_note(
+            "Recomendação: esta tabela deve ser revisada sempre que houver atualização de protocolo laboratorial, "
+            "mudança de método analítico ou revisão de faixas etárias e unidades de medida."
+        )
 
 # ============================================================
 # RODAPÉ
