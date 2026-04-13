@@ -2051,7 +2051,7 @@ with tab5:
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        table-layout: fixed;
+        table-layout: auto;
         font-size: 13.5px;
         color: #18302B;
     }}
