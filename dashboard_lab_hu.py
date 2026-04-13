@@ -2091,7 +2091,7 @@ with tab5:
     }}
 
     .col-exame {{
-        width: 18%;
+        width: 1%;
         min-width: 160px;
         font-weight: 600;
     }}
@@ -2111,13 +2111,13 @@ with tab5:
     }}
 
     .col-ref {{
-        width: 40%;
+        width: 60%;
         text-align: center;
         vertical-align: middle;
     }}
 
     .col-limite {{
-        width: 25%;
+        width: 20%;
         text-align: center;
         vertical-align: middle;
     }}
