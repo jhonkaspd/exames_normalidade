@@ -1036,6 +1036,15 @@ with tab2:
         )
         fig.update_layout(
             **plot_layout("Ranking de repetições por exame", height=430, barmode="stack"),
+
+            legend=dict(
+                orientation="h",
+                yanchor="top",
+                y=-0.20,          # 👈 joga para baixo do gráfico
+                xanchor="center",
+                x=0.5
+            ),
+
             xaxis=dict(title=None, showgrid=True, gridcolor=COLORS["grid"]),
             yaxis=dict(title=None, showgrid=False),
         )
