@@ -11,7 +11,6 @@ warnings.filterwarnings("ignore")
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-import textwrap
 import streamlit as st
 
 
@@ -508,7 +507,6 @@ def color_scale_list(values, vmin=0, vmax=100):
     vmax = vmax if vmax is not None else max(values)
     return [color_scale(v, vmin=vmin, vmax=vmax) for v in values]
 
-
 # ============================================================
 # DADOS
 # ============================================================
@@ -516,7 +514,6 @@ def color_scale_list(values, vmin=0, vmax=100):
 def carregar_dados(path="dados_lab_hu.xlsx"):
     df = pd.read_excel(path, sheet_name="data")
     dim = pd.read_excel(path, sheet_name="dim_exames")
-    dim_normalidade = pd.read_excel(path, sheet_name="dim_normalidade")
 
     for col in ["Interpretação", "Descrição Exame", "Setor Solicitante", "Unidade"]:
         if col in df.columns:
@@ -524,11 +521,24 @@ def carregar_dados(path="dados_lab_hu.xlsx"):
 
     dim["Descrição Exame"] = dim["Descrição Exame"].astype(str).str.strip().str.upper()
 
-    if "Exame" in dim_normalidade.columns:
-        dim_normalidade["Exame"] = dim_normalidade["Exame"].astype(str).str.strip()
+    # Padroniza nomes alternativos das novas colunas
+    col_ref = None
+    col_lim = None
 
-    if "Referência" in dim_normalidade.columns:
-        dim_normalidade["Referência"] = dim_normalidade["Referência"].astype(str).str.strip()
+    for c in dim.columns:
+        c_norm = str(c).strip().upper()
+        if c_norm in ["REFERENCIA", "REFERÊNCIA"]:
+            col_ref = c
+        elif c_norm in ["LIMITES", "LIMITES DE DESCISÃO CLÍNICA", "LIMITES DE DECISAO CLINICA"]:
+            col_lim = c
+
+    if col_ref is None:
+        dim["Referência"] = "-"
+        col_ref = "Referência"
+
+    if col_lim is None:
+        dim["Limites de Descisão Clínica"] = "-"
+        col_lim = "Limites de Descisão Clínica"
 
     df["DataHoraPedido"] = pd.to_datetime(df["DataHoraPedido"], errors="coerce")
     df = df.dropna(subset=["DataHoraPedido"]).copy()
@@ -574,8 +584,45 @@ def carregar_dados(path="dados_lab_hu.xlsx"):
     df["Flag_Rep_Alerta"] = ((df["Flag_Rep"] == 1) & (df["Flag_Rep_Crit"] == 0)).astype(int)
     df["Custo_Rep"] = df["Custo_Unit"] * df["Flag_Rep"]
 
-    return df, dim_normalidade
+    # Tabela para a nova aba
+    dim_ref = dim[
+        ["Descrição Exame", "CUSTO_EXAME", "INTERVALOS_CLINICOS", col_ref, col_lim]
+    ].copy()
 
+    dim_ref = dim_ref.rename(columns={
+        "Descrição Exame": "Exame",
+        "CUSTO_EXAME": "Custo Unitário",
+        "INTERVALOS_CLINICOS": "Intervalos Clínicos",
+        col_ref: "Valores de Referência",
+        col_lim: "Limites de Decisão Clínica",
+    })
+
+    dim_ref["Exame"] = dim_ref["Exame"].astype(str).str.title()
+    dim_ref["Custo Unitário"] = pd.to_numeric(
+        dim_ref["Custo Unitário"], errors="coerce"
+    ).fillna(0)
+
+    dim_ref["Intervalos Clínicos"] = pd.to_numeric(
+        dim_ref["Intervalos Clínicos"], errors="coerce"
+    ).fillna(0).astype(int)
+
+    dim_ref["Valores de Referência"] = (
+        dim_ref["Valores de Referência"]
+        .fillna("-")
+        .astype(str)
+        .str.strip()
+    )
+
+    dim_ref["Limites de Decisão Clínica"] = (
+        dim_ref["Limites de Decisão Clínica"]
+        .fillna("-")
+        .astype(str)
+        .str.strip()
+    )
+
+    dim_ref = dim_ref.sort_values("Exame").reset_index(drop=True)
+
+    return df, dim_ref
 
 # ============================================================
 # SIDEBAR
@@ -593,7 +640,7 @@ with st.sidebar:
 
     st.markdown("<div style='height:0.85rem'></div>", unsafe_allow_html=True)
 
-    df_raw, dim_normalidade = carregar_dados()
+    df_raw, dim_ref = carregar_dados()
 
     data_min = pd.to_datetime(df_raw["DataHoraPedido"]).min().date()
     data_max = pd.to_datetime(df_raw["DataHoraPedido"]).max().date()
@@ -845,14 +892,12 @@ with i3:
         f"O painel indica <b>{format_int(reps)}</b> repetições desnecessárias, com impacto mensal estimado em <b>{format_money(custo_rep_mes)}</b>. O foco ideal é combinar revisão de rotina, educação e monitoramento contínuo."
     )
 
-
 # ============================================================
 # TABS
 # ============================================================
 tab1, tab2, tab3, tab4, tab5 = st.tabs(
     ["Visão geral", "Repetições", "Jornada do paciente", "Mapa integrado", "Valores de Referência"]
 )
-
 
 # ============================================================
 # TAB 1 — VISÃO GERAL
@@ -1039,18 +1084,6 @@ with tab2:
             xaxis=dict(title=None, showgrid=True, gridcolor=COLORS["grid"]),
             yaxis=dict(title=None, showgrid=False),
         )
-
-        fig.update_layout(
-            legend=dict(
-                orientation="h",
-                yanchor="top",
-                y=-0.20,
-                xanchor="center",
-                x=0.5
-            ),
-            margin=dict(t=60, b=70)  # espaço para legenda
-        )
-
         st.plotly_chart(fig, use_container_width=True)
 
         info_note(
@@ -1894,131 +1927,110 @@ with tab4:
 # TAB 5 — VALORES DE REFERÊNCIA
 # ============================================================
 with tab5:
-    section_header("Valores de referência utilizados na análise")
+    section_header("Parâmetros utilizados na análise")
 
     st.markdown(
-        textwrap.dedent("""
+        """
         <div class="caption-box">
-            <b>Objetivo:</b> explicitar os intervalos e pontos de corte considerados para interpretação de normalidade
-            dos exames utilizados neste estudo, promovendo transparência analítica e alinhamento clínico.
+            <b>Objetivo desta aba:</b> apresentar de forma transparente os parâmetros
+            considerados no dashboard para cada exame, incluindo custo unitário,
+            intervalo clínico, faixa de referência laboratorial e limites de decisão clínica.
         </div>
-        """),
+        """,
         unsafe_allow_html=True,
     )
 
-    ref_df = dim_normalidade.copy()
+    total_exames_dim = len(dim_ref)
+    exames_com_limite = (dim_ref["Limites de Decisão Clínica"] != "-").sum()
+    exames_com_referencia = (dim_ref["Valores de Referência"] != "-").sum()
 
-    if ref_df.empty:
-        st.info("A aba 'dim_normalidade' não possui dados.")
-    else:
-        ref_df = ref_df.rename(columns={
-            "Exame": "Exame",
-            "Referência": "Valor de Referência"
-        })
+    c_ref1, c_ref2, c_ref3 = st.columns(3)
 
-        ref_df["Exame"] = ref_df["Exame"].astype(str).str.strip()
-        ref_df["Valor de Referência"] = ref_df["Valor de Referência"].astype(str).str.strip()
-
-        ref_df = ref_df.sort_values("Exame").reset_index(drop=True)
-        ref_df.index = ref_df.index + 1
-
+    with c_ref1:
         st.markdown(
-            textwrap.dedent(f"""
-            <div class="info-note">
-                Foram identificados <b>{len(ref_df)}</b> exames com valor de referência parametrizado na base analítica.
-            </div>
-            """),
+            kpi_card(
+                "Exames parametrizados",
+                format_int(total_exames_dim),
+                "Exames cadastrados na dimensão clínica",
+                COLORS["deep"],
+                icon="🧪",
+                fill=1,
+                accent_2=COLORS["primary"],
+            ),
             unsafe_allow_html=True,
         )
 
-        tabela_html = textwrap.dedent("""
+    with c_ref2:
+        st.markdown(
+            kpi_card(
+                "Com referência",
+                format_int(exames_com_referencia),
+                "Exames com faixa de referência informada",
+                COLORS["primary"],
+                icon="📏",
+                fill=(exames_com_referencia / total_exames_dim) if total_exames_dim else 0,
+                accent_2=COLORS["primary_light"],
+            ),
+            unsafe_allow_html=True,
+        )
+
+    with c_ref3:
+        st.markdown(
+            kpi_card(
+                "Com limite clínico",
+                format_int(exames_com_limite),
+                "Exames com limite de decisão clínica definido",
+                COLORS["alert"],
+                icon="🚨",
+                fill=(exames_com_limite / total_exames_dim) if total_exames_dim else 0,
+                accent_2=COLORS["danger"],
+            ),
+            unsafe_allow_html=True,
+        )
+
+    info_note(
+        "Os valores abaixo são exibidos como referência institucional do painel. "
+        "Eles servem para dar transparência aos pontos de corte adotados na análise, "
+        "mas devem sempre ser interpretados em conjunto com contexto clínico e protocolo assistencial."
+    )
+
+    dim_ref_view = dim_ref.copy()
+    dim_ref_view["Custo Unitário"] = dim_ref_view["Custo Unitário"].apply(
+        lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    )
+    dim_ref_view["Intervalos Clínicos"] = dim_ref_view["Intervalos Clínicos"].apply(
+        lambda x: f"{int(x)} h"
+    )
+
+    st.markdown(
+        """
         <div style="
-            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(243,249,245,0.96));
+            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(243,249,245,0.96));
             border: 1px solid #D8E4DD;
             border-radius: 18px;
-            padding: 0.35rem 0.35rem 0.5rem 0.35rem;
+            padding: 0.4rem 0.6rem 0.8rem 0.6rem;
             box-shadow: 0 10px 24px rgba(0,75,82,0.05);
+            margin-top: 0.35rem;
         ">
-            <div style="overflow-x:auto;">
-                <table style="
-                    width:100%;
-                    border-collapse:separate;
-                    border-spacing:0;
-                    font-size:0.90rem;
-                    color:#18302B;
-                ">
-                    <thead>
-                        <tr>
-                            <th style="
-                                position:sticky; top:0;
-                                background:#073B3A;
-                                color:white;
-                                text-align:center;
-                                padding:12px 10px;
-                                font-weight:800;
-                                border-top-left-radius:14px;
-                                width:70px;
-                            ">#</th>
-                            <th style="
-                                position:sticky; top:0;
-                                background:#073B3A;
-                                color:white;
-                                text-align:left;
-                                padding:12px 12px;
-                                font-weight:800;
-                            ">Exame</th>
-                            <th style="
-                                position:sticky; top:0;
-                                background:#073B3A;
-                                color:white;
-                                text-align:left;
-                                padding:12px 12px;
-                                font-weight:800;
-                                border-top-right-radius:14px;
-                            ">Valor de Referência</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        """)
+        """,
+        unsafe_allow_html=True,
+    )
 
-        for i, row in ref_df.iterrows():
-            bg = "#FFFFFF" if i % 2 == 1 else "#F7FBF8"
+    st.dataframe(
+        dim_ref_view,
+        use_container_width=True,
+        hide_index=True,
+        height=560,
+        column_config={
+            "Exame": st.column_config.TextColumn("Exame", width="medium"),
+            "Custo Unitário": st.column_config.TextColumn("Custo Unitário", width="small"),
+            "Intervalos Clínicos": st.column_config.TextColumn("Intervalos Clínicos", width="small"),
+            "Valores de Referência": st.column_config.TextColumn("Valores de Referência", width="medium"),
+            "Limites de Decisão Clínica": st.column_config.TextColumn("Limites de Decisão Clínica", width="large"),
+        },
+    )
 
-            tabela_html += textwrap.dedent(f"""
-            <tr>
-                <td style="
-                    background:{bg};
-                    padding:10px 10px;
-                    text-align:center;
-                    border-bottom:1px solid #E8EFEB;
-                    font-weight:700;
-                    color:#6B7D76;
-                ">{i}</td>
-                <td style="
-                    background:{bg};
-                    padding:10px 12px;
-                    border-bottom:1px solid #E8EFEB;
-                    font-weight:600;
-                ">{row["Exame"]}</td>
-                <td style="
-                    background:{bg};
-                    padding:10px 12px;
-                    border-bottom:1px solid #E8EFEB;
-                    line-height:1.45;
-                ">{row["Valor de Referência"]}</td>
-            </tr>
-            """)
-
-        tabela_html += textwrap.dedent("""
-        </div>
-        """)
-
-        st.markdown(tabela_html, unsafe_allow_html=True)
-
-        info_note(
-            "Recomendação: esta tabela deve ser revisada sempre que houver atualização de protocolo laboratorial, "
-            "mudança de método analítico ou revisão de faixas etárias e unidades de medida."
-        )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # ============================================================
 # RODAPÉ
@@ -2026,7 +2038,7 @@ with tab5:
 st.markdown(
     """
     <div class="footer-note">
-        Lab Vision · Laboratorio Unimed · Monitoramento de repetições laboratoriais ·
+        Lab Vision · Hospital Unimed · Monitoramento de repetições laboratoriais ·
         Painel refinado com foco em leitura executiva, priorização assistencial e impacto financeiro.
     </div>
     """,
