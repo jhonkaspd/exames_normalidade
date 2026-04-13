@@ -2089,28 +2089,29 @@ with tab5:
     }}
 
     .col-exame {{
-        width: 10%;
+        width: 1%;
         font-weight: 600;
     }}
 
     .col-custo {{
-        width: 10%;
+        width: 1%;
         white-space: nowrap;
-        text-align: left;
+        text-align: center;
     }}
 
     .col-intervalo {{
-        width: 10%;
+        width: 1%;
         white-space: nowrap;
-        text-align: left;
+        text-align: center;
     }}
 
     .col-ref {{
-        width: 50%;
+        width: 1%;
+        text-align: center;
     }}
 
     .col-limite {{
-        width: 20%;
+        width: 1%;
         text-align: center;
         vertical-align: middle;
     }}
