@@ -2128,7 +2128,6 @@ with tab5:
             ),
             xaxis=dict(title="Nº de pedidos", showgrid=True, gridcolor=COLORS["grid"]),
             yaxis=dict(title=None, showgrid=False, automargin=True),
-            margin=dict(l=10, r=120, t=55, b=20),
         )
 
         st.plotly_chart(fig, use_container_width=True)
@@ -2187,7 +2186,6 @@ with tab5:
                 ),
                 xaxis=dict(title="% Normalidade", ticksuffix="%", showgrid=True, gridcolor=COLORS["grid"]),
                 yaxis=dict(title=None, showgrid=False, automargin=True),
-                margin=dict(l=10, r=120, t=55, b=20),
             )
 
             st.plotly_chart(fig, use_container_width=True)
