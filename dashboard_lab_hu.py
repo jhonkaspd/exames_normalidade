@@ -395,6 +395,8 @@ def format_int(v):
 def format_money(v):
     return f"R$ {v:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
+def format_money_2(v):
+    return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 def format_pct(v, nd=1):
     return f"{v:.{nd}f}%".replace(".", ",")
@@ -2298,7 +2300,7 @@ with tab5:
         # >>> PREPARAÇÃO DOS DADOS
         tabela = mix_freq.copy()
 
-        tabela["Custo_Medio"] = tabela["Custo_Medio"].apply(format_money)
+        tabela["Custo_Medio"] = tabela["Custo_Medio"].apply(format_money_2)
         tabela["Pct_Normal"] = tabela["Pct_Normal"].apply(lambda x: f"{x:.1f}%".replace(".", ","))
         tabela["Pct"] = tabela["Pct"].apply(lambda x: f"{x:.2f}%".replace(".", ","))
 
