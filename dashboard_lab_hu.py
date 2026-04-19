@@ -2294,55 +2294,76 @@ with tab5:
         # 5. TABELA COMPLETA
         # ==========================================================
         section_header("Detalhamento completo dos mixes")
+        def esc(v):
+            return html.escape(str(v))
 
-        tabela = mix_freq.copy()
-        tabela["Custo_Medio"] = tabela["Custo_Medio"].apply(format_money)
-        tabela["Pct_Normal"] = tabela["Pct_Normal"].apply(lambda x: f"{x:.1f}%".replace(".", ","))
-        tabela["Pct"] = tabela["Pct"].apply(lambda x: f"{x:.2f}%".replace(".", ","))
+        linhas_html = []
+        for i, row in tabela.iterrows():
+            bg = "#FFFFFF" if i % 2 == 0 else "#F7FBF8"
 
-        tabela = tabela.rename(columns={
-            "Mix": "Mix de Exames",
-            "Pedidos": "Nº de Pedidos",
-            "Qtd_Exames": "Qtd Exames",
-            "Custo_Medio": "Custo Médio",
-            "Pct_Normal": "% Normal",
-            "Pct": "% do Total",
-        })
+            linhas_html.append(f"""
+            <tr>
+                <td class="col-mix">{esc(row["Mix de Exames"])}</td>
+                <td class="col-center">{esc(row["Nº de Pedidos"])}</td>
+                <td class="col-center">{esc(row["Qtd Exames"])}</td>
+                <td class="col-center">{esc(row["Custo Médio"])}</td>
+                <td class="col-center">{esc(row["% Normal"])}</td>
+                <td class="col-center">{esc(row["% do Total"])}</td>
+            </tr>
+            """)
 
-        styled_tabela = (
-            tabela.style
-            .set_properties(subset=["Mix de Exames"], **{"text-align": "left"})
-            .set_properties(
-                subset=["Nº de Pedidos", "Qtd Exames", "Custo Médio", "% Normal", "% do Total"],
-                **{"text-align": "center"}
-            )
-        )
+        tabela_html = f"""
+        <style>
+        .table-mix {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }}
 
-        st.dataframe(
-            tabela,
-            use_container_width=True,
-            height=520,
-            column_config={
-                "Nº de Pedidos": st.column_config.NumberColumn(
-                    "Nº de Pedidos",
-                    help="Quantidade de pedidos",
-                    format="%d"
-                ),
-                "Qtd Exames": st.column_config.NumberColumn(
-                    "Qtd Exames",
-                    format="%d"
-                ),
-                "Custo Médio": st.column_config.TextColumn(
-                    "Custo Médio"
-                ),
-                "% Normal": st.column_config.TextColumn(
-                    "% Normal"
-                ),
-                "% do Total": st.column_config.TextColumn(
-                    "% do Total"
-                ),
-            }
-        )
+        .table-mix th {{
+            background: #073B3A;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }}
+
+        .table-mix td {{
+            padding: 10px;
+            border-bottom: 1px solid #E8EFEB;
+        }}
+
+        .col-mix {{
+            text-align: left;
+            font-weight: 500;
+        }}
+
+        .col-center {{
+            text-align: center;
+        }}
+
+        .table-mix tr:hover {{
+            background: #F1F8F4;
+        }}
+        </style>
+
+        <table class="table-mix">
+            <thead>
+                <tr>
+                    <th>Mix de Exames</th>
+                    <th>Nº de Pedidos</th>
+                    <th>Qtd Exames</th>
+                    <th>Custo Médio</th>
+                    <th>% Normal</th>
+                    <th>% do Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {"".join(linhas_html)}
+            </tbody>
+        </table>
+        """
+
+        components.html(tabela_html, height=600, scrolling=True)
 
 # ============================================================
 # TAB 6 — VALORES DE REFERÊNCIA
