@@ -2319,9 +2319,29 @@ with tab5:
         )
 
         st.dataframe(
-            styled_tabela,
+            tabela,
             use_container_width=True,
             height=520,
+            column_config={
+                "Nº de Pedidos": st.column_config.NumberColumn(
+                    "Nº de Pedidos",
+                    help="Quantidade de pedidos",
+                    format="%d"
+                ),
+                "Qtd Exames": st.column_config.NumberColumn(
+                    "Qtd Exames",
+                    format="%d"
+                ),
+                "Custo Médio": st.column_config.TextColumn(
+                    "Custo Médio"
+                ),
+                "% Normal": st.column_config.TextColumn(
+                    "% Normal"
+                ),
+                "% do Total": st.column_config.TextColumn(
+                    "% do Total"
+                ),
+            }
         )
 
 # ============================================================
