@@ -2294,6 +2294,26 @@ with tab5:
         # 5. TABELA COMPLETA
         # ==========================================================
         section_header("Detalhamento completo dos mixes")
+
+        # >>> CRIAÇÃO DA TABELA (ESSENCIAL)
+        tabela = mix_freq.copy()
+
+        tabela["Custo_Medio"] = tabela["Custo_Medio"].apply(format_money)
+        tabela["Pct_Normal"] = tabela["Pct_Normal"].apply(lambda x: f"{x:.1f}%".replace(".", ","))
+        tabela["Pct"] = tabela["Pct"].apply(lambda x: f"{x:.2f}%".replace(".", ","))
+
+        tabela = tabela.rename(columns={
+            "Mix": "Mix de Exames",
+            "Pedidos": "Nº de Pedidos",
+            "Qtd_Exames": "Qtd Exames",
+            "Custo_Medio": "Custo Médio",
+            "Pct_Normal": "% Normal",
+            "Pct": "% do Total",
+        })
+
+        # ==========================================================
+        # HTML DA TABELA
+        # ==========================================================
         def esc(v):
             return html.escape(str(v))
 
@@ -2302,7 +2322,7 @@ with tab5:
             bg = "#FFFFFF" if i % 2 == 0 else "#F7FBF8"
 
             linhas_html.append(f"""
-            <tr>
+            <tr style="background:{bg};">
                 <td class="col-mix">{esc(row["Mix de Exames"])}</td>
                 <td class="col-center">{esc(row["Nº de Pedidos"])}</td>
                 <td class="col-center">{esc(row["Qtd Exames"])}</td>
@@ -2318,6 +2338,7 @@ with tab5:
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
+            color: #18302B;
         }}
 
         .table-mix th {{
@@ -2325,6 +2346,7 @@ with tab5:
             color: white;
             padding: 10px;
             text-align: center;
+            font-weight: 700;
         }}
 
         .table-mix td {{
