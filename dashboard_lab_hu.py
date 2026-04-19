@@ -2291,11 +2291,11 @@ with tab5:
         st.plotly_chart(fig, use_container_width=True)
 
         # ==========================================================
-        # 5. TABELA COMPLETA
+        # 5. TABELA COMPLETA (VERSÃO FINAL PADRÃO VISUAL)
         # ==========================================================
         section_header("Detalhamento completo dos mixes")
 
-        # >>> CRIAÇÃO DA TABELA (ESSENCIAL)
+        # >>> PREPARAÇÃO DOS DADOS
         tabela = mix_freq.copy()
 
         tabela["Custo_Medio"] = tabela["Custo_Medio"].apply(format_money)
@@ -2315,77 +2315,127 @@ with tab5:
         # HTML DA TABELA
         # ==========================================================
         def esc(v):
-            return html.escape(str(v))
+            return html.escape(str(v)).replace("\n", "<br>")
 
         linhas_html = []
         for i, row in tabela.iterrows():
             bg = "#FFFFFF" if i % 2 == 0 else "#F7FBF8"
 
             linhas_html.append(f"""
-            <tr style="background:{bg};">
-                <td class="col-mix">{esc(row["Mix de Exames"])}</td>
-                <td class="col-center">{esc(row["Nº de Pedidos"])}</td>
-                <td class="col-center">{esc(row["Qtd Exames"])}</td>
-                <td class="col-center">{esc(row["Custo Médio"])}</td>
-                <td class="col-center">{esc(row["% Normal"])}</td>
-                <td class="col-center">{esc(row["% do Total"])}</td>
+            <tr>
+                <td class="col-mix" style="background:{bg};">{esc(row["Mix de Exames"])}</td>
+                <td class="col-center" style="background:{bg};">{esc(row["Nº de Pedidos"])}</td>
+                <td class="col-center" style="background:{bg};">{esc(row["Qtd Exames"])}</td>
+                <td class="col-center" style="background:{bg};">{esc(row["Custo Médio"])}</td>
+                <td class="col-center" style="background:{bg};">{esc(row["% Normal"])}</td>
+                <td class="col-center" style="background:{bg};">{esc(row["% do Total"])}</td>
             </tr>
             """)
 
         tabela_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <meta charset="utf-8">
         <style>
-        .table-mix {{
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-            color: #18302B;
-        }}
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-        .table-mix th {{
-            background: #073B3A;
-            color: white;
-            padding: 10px;
-            text-align: center;
-            font-weight: 700;
-        }}
+            body {{
+                margin: 0;
+                padding: 0;
+                background: transparent;
+                font-family: 'Inter', Arial, sans-serif;
+                color: #18302B;
+            }}
 
-        .table-mix td {{
-            padding: 10px;
-            border-bottom: 1px solid #E8EFEB;
-        }}
+            .table-card {{
+                background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(243,249,245,0.96));
+                border: 1px solid #D8E4DD;
+                border-radius: 18px;
+                padding: 6px 6px 10px 6px;
+                box-shadow: 0 10px 24px rgba(0,75,82,0.05);
+                overflow: visible;
+            }}
 
-        .col-mix {{
-            text-align: left;
-            font-weight: 500;
-        }}
+            table {{
+                width: 100%;
+                margin: 0 auto;
+                border-collapse: separate;
+                border-spacing: 0;
+                table-layout: auto;
+                font-size: 13.5px;
+                color: #18302B;
+                font-family: 'Inter', Arial, sans-serif;
+            }}
 
-        .col-center {{
-            text-align: center;
-        }}
+            thead th {{
+                background: #073B3A;
+                color: #FFFFFF;
+                text-align: center;
+                padding: 12px 10px;
+                font-weight: 800;
+                vertical-align: middle;
+                border-bottom: 1px solid #D8E4DD;
+                line-height: 1.2;
+            }}
 
-        .table-mix tr:hover {{
-            background: #F1F8F4;
-        }}
+            thead th:first-child {{
+                border-top-left-radius: 14px;
+            }}
+
+            thead th:last-child {{
+                border-top-right-radius: 14px;
+            }}
+
+            tbody td {{
+                padding: 10px 10px;
+                border-bottom: 1px solid #E8EFEB;
+                vertical-align: middle;
+                line-height: 1.45;
+                font-weight: 500;
+                word-break: break-word;
+                overflow-wrap: anywhere;
+            }}
+
+            tbody tr:hover td {{
+                background: #F1F8F4 !important;
+            }}
+
+            .col-mix {{
+                text-align: left;
+                font-weight: 500;
+                width: 65%;
+            }}
+
+            .col-center {{
+                text-align: center;
+                white-space: nowrap;
+            }}
         </style>
-
-        <table class="table-mix">
-            <thead>
-                <tr>
-                    <th>Mix de Exames</th>
-                    <th>Nº de Pedidos</th>
-                    <th>Qtd Exames</th>
-                    <th>Custo Médio</th>
-                    <th>% Normal</th>
-                    <th>% do Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                {"".join(linhas_html)}
-            </tbody>
-        </table>
+        </head>
+        <body>
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mix de Exames</th>
+                            <th>Nº de Pedidos</th>
+                            <th>Qtd Exames</th>
+                            <th>Custo Médio</th>
+                            <th>% Normal</th>
+                            <th>% do Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {"".join(linhas_html)}
+                    </tbody>
+                </table>
+            </div>
+        </body>
+        </html>
         """
 
-        components.html(tabela_html, height=600, scrolling=True)
+        components.html(tabela_html, height=620, scrolling=True)
 
 # ============================================================
 # TAB 6 — VALORES DE REFERÊNCIA
