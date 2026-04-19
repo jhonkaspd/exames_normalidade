@@ -907,8 +907,8 @@ with i3:
 # ============================================================
 # TABS
 # ============================================================
-tab1, tab2, tab3, tab4, tab6, tab5 = st.tabs(
-    ["Visão geral", "Repetições", "Jornada do paciente", "Mapa integrado", "Valores de Referência", "Mix de Exames"]
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+    ["Visão geral", "Repetições", "Jornada do paciente", "Mapa integrado", "Mix de Exames", "Valores de Referência"]
 )
 
 # ============================================================
@@ -1947,9 +1947,200 @@ with tab4:
     st.plotly_chart(fig, use_container_width=True)
 
 # ============================================================
-# TAB 5 — VALORES DE REFERÊNCIA
+# TAB 5 — MIX DE EXAMES (VERSÃO AVANÇADA)
 # ============================================================
-with tab5:
+with tab:
+    section_header("Análise estratégica de mix de exames")
+
+    # ==========================================================
+    # CONSTRUÇÃO DO MIX
+    # ==========================================================
+    mix_df = (
+        df.groupby("Pedido")
+        .agg(
+            Exames=("Descrição Exame", lambda x: sorted(set(x))),
+            Qtd_Exames=("Descrição Exame", "nunique"),
+            Custo_Total=("Custo_Unit", "sum"),
+            Pct_Normal=("Flag_Normal", "mean")
+        )
+        .reset_index()
+    )
+
+    mix_df["Mix"] = mix_df["Exames"].apply(lambda x: " + ".join(x))
+    mix_df["Pct_Normal"] = (mix_df["Pct_Normal"] * 100).round(1)
+
+    # ==========================================================
+    # AGREGAÇÃO POR MIX
+    # ==========================================================
+    mix_freq = (
+        mix_df.groupby("Mix")
+        .agg(
+            Pedidos=("Pedido", "count"),
+            Qtd_Exames=("Qtd_Exames", "mean"),
+            Custo_Medio=("Custo_Total", "mean"),
+            Pct_Normal=("Pct_Normal", "mean")
+        )
+        .reset_index()
+    )
+
+    total_pedidos = mix_df["Pedido"].nunique()
+    mix_freq["Pct"] = (mix_freq["Pedidos"] / total_pedidos * 100).round(2)
+
+    mix_freq = mix_freq.sort_values("Pedidos", ascending=False)
+
+    # ==========================================================
+    # 1. TOP MIXES + CUSTO
+    # ==========================================================
+    section_header("Principais mixes (frequência e custo)")
+
+    top_mix = mix_freq.head(12).sort_values("Pedidos")
+
+    fig = go.Figure(
+        go.Bar(
+            y=[truncate_text(x, 75) for x in top_mix["Mix"]],
+            x=top_mix["Pedidos"],
+            orientation="h",
+            marker_color=COLORS["primary"],
+            text=[format_money(x) for x in top_mix["Custo_Medio"]],
+            textposition="outside",
+            hovertemplate=(
+                "<b>%{y}</b><br>"
+                "Pedidos: %{x}<br>"
+                "<extra></extra>"
+            )
+        )
+    )
+
+    fig.update_layout(
+        **plot_layout("Top mixes (volume)", height=500),
+        xaxis=dict(title="Nº de pedidos"),
+        yaxis=dict(title=None, automargin=True)
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # ==========================================================
+    # 2. MIXES SUSPEITOS (DESPERDÍCIO)
+    # ==========================================================
+    suspeitos = mix_freq[
+        (mix_freq["Pedidos"] >= mix_freq["Pedidos"].quantile(0.75)) &
+        (mix_freq["Pct_Normal"] >= 75)
+    ].copy()
+
+    suspeitos = suspeitos.sort_values(["Pct_Normal", "Pedidos"], ascending=[True, False]).tail(12)
+
+    fig = go.Figure(
+        go.Bar(
+            y=[truncate_text(x, 75) for x in suspeitos["Mix"]],
+            x=suspeitos["Pct_Normal"],
+            orientation="h",
+            marker_color=COLORS["danger"],
+            text=[f"{v:.0f}%" for v in suspeitos["Pct_Normal"]],
+            textposition="outside"
+        )
+    )
+
+    fig.update_layout(
+        **plot_layout("Mixes com potencial desperdício", height=500),
+        xaxis=dict(title="% Normalidade", ticksuffix="%"),
+        yaxis=dict(title=None, automargin=True)
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    info_note(
+        "Mixes com alta frequência e elevada normalidade sugerem possíveis protocolos com excesso de exames."
+    )
+
+    # ==========================================================
+    # 3. MATRIZ ESTRATÉGICA (CLUSTER VISUAL)
+    # ==========================================================
+    section_header("Matriz estratégica de mixes")
+
+    mix_plot = mix_freq[mix_freq["Pedidos"] >= 3].copy()
+
+    fig = go.Figure(
+        go.Scatter(
+            x=mix_plot["Pedidos"],
+            y=mix_plot["Pct_Normal"],
+            mode="markers+text",
+            text=[truncate_text(x, 30) for x in mix_plot["Mix"]],
+            textposition="top center",
+            marker=dict(
+                size=np.clip(mix_plot["Qtd_Exames"] * 5, 10, 60),
+                color=color_scale_list(mix_plot["Pct_Normal"], vmin=0, vmax=100),
+                opacity=0.8,
+                line=dict(color="white", width=1)
+            ),
+            customdata=np.stack([
+                mix_plot["Custo_Medio"],
+                mix_plot["Qtd_Exames"]
+            ], axis=1),
+            hovertemplate=(
+                "<b>%{text}</b><br>"
+                "Pedidos: %{x}<br>"
+                "Normalidade: %{y:.1f}%<br>"
+                "Custo médio: R$ %{customdata[0]:,.2f}<br>"
+                "Qtd exames: %{customdata[1]}<extra></extra>"
+            )
+        )
+    )
+
+    # Linhas de referência
+    fig.add_hline(y=75, line_dash="dot", line_color=COLORS["danger"])
+    fig.add_vline(x=mix_plot["Pedidos"].median(), line_dash="dot")
+
+    fig.update_layout(
+        **plot_layout("Cluster de mixes (volume × normalidade × complexidade)", height=500),
+        xaxis=dict(title="Nº de pedidos"),
+        yaxis=dict(title="% Normalidade")
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    info_note(
+        "Mixes no quadrante superior direito representam alto volume e alta normalidade — principais candidatos para revisão clínica."
+    )
+
+    # ==========================================================
+    # TABELA COMPLETA
+    # ==========================================================
+    section_header("Detalhamento completo dos mixes")
+
+    tabela = mix_freq.copy()
+    tabela["Qtd_Exames"] = tabela["Qtd_Exames"].round(0).astype(int)
+    tabela["Pct_Normal"] = tabela["Pct_Normal"].round(1).apply(lambda x: f"{x:.1f}%")
+    tabela["Custo_Medio"] = tabela["Custo_Medio"].apply(format_money)
+    tabela["Pct"] = tabela["Pct"].apply(lambda x: f"{x:.2f}%")
+
+    tabela = tabela.rename(columns={
+        "Mix": "Mix de Exames",
+        "Pedidos": "Nº de Pedidos",
+        "Qtd_Exames": "Qtd Exames",
+        "Pct_Normal": "% Normal",
+        "Custo_Medio": "Custo Médio",
+        "Pct": "% do Total"
+    })
+
+    styled_tabela = (
+        tabela.style
+        .set_properties(subset=["Mix de Exames"], **{"text-align": "left"})
+        .set_properties(
+            subset=["Nº de Pedidos", "Qtd Exames", "Custo Médio", "% Normal", "% do Total"],
+            **{"text-align": "center"}
+        )
+    )
+
+    st.dataframe(
+        styled_tabela,
+        use_container_width=True,
+        height=500
+    )
+
+# ============================================================
+# TAB 6 — VALORES DE REFERÊNCIA
+# ============================================================
+with tab6:
     section_header("Valores de referência utilizados na análise")
 
     st.markdown(
@@ -2159,184 +2350,6 @@ with tab5:
             "Recomendação: esta tabela deve ser revisada sempre que houver atualização de protocolo laboratorial, "
             "mudança de método analítico ou revisão de faixas etárias e unidades de medida."
         )
-
-# ============================================================
-# TAB 6 — MIX DE EXAMES (VERSÃO AVANÇADA)
-# ============================================================
-with tab6:
-    section_header("Análise estratégica de mix de exames")
-
-    # ==========================================================
-    # CONSTRUÇÃO DO MIX
-    # ==========================================================
-    mix_df = (
-        df.groupby("Pedido")
-        .agg(
-            Exames=("Descrição Exame", lambda x: sorted(set(x))),
-            Qtd_Exames=("Descrição Exame", "nunique"),
-            Custo_Total=("Custo_Unit", "sum"),
-            Pct_Normal=("Flag_Normal", "mean")
-        )
-        .reset_index()
-    )
-
-    mix_df["Mix"] = mix_df["Exames"].apply(lambda x: " + ".join(x))
-    mix_df["Pct_Normal"] = (mix_df["Pct_Normal"] * 100).round(1)
-
-    # ==========================================================
-    # AGREGAÇÃO POR MIX
-    # ==========================================================
-    mix_freq = (
-        mix_df.groupby("Mix")
-        .agg(
-            Pedidos=("Pedido", "count"),
-            Qtd_Exames=("Qtd_Exames", "mean"),
-            Custo_Medio=("Custo_Total", "mean"),
-            Pct_Normal=("Pct_Normal", "mean")
-        )
-        .reset_index()
-    )
-
-    total_pedidos = mix_df["Pedido"].nunique()
-    mix_freq["Pct"] = (mix_freq["Pedidos"] / total_pedidos * 100).round(2)
-
-    mix_freq = mix_freq.sort_values("Pedidos", ascending=False)
-
-    # ==========================================================
-    # 1. TOP MIXES + CUSTO
-    # ==========================================================
-    section_header("Principais mixes (frequência e custo)")
-
-    c1, c2 = st.columns([1, 1])
-
-    with c1:
-        top_mix = mix_freq.head(10).sort_values("Pedidos")
-
-        fig = go.Figure(
-            go.Bar(
-                y=[truncate_text(x, 60) for x in top_mix["Mix"]],
-                x=top_mix["Pedidos"],
-                orientation="h",
-                marker_color=COLORS["primary"],
-                text=[format_money(x) for x in top_mix["Custo_Medio"]],
-                textposition="outside",
-                hovertemplate="<b>%{y}</b><br>Pedidos: %{x}<extra></extra>"
-            )
-        )
-
-        fig.update_layout(
-            **plot_layout("Top mixes (volume)", height=420),
-            xaxis=dict(title="Nº de pedidos"),
-            yaxis=dict(title=None)
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-    # ==========================================================
-    # 2. MIXES SUSPEITOS (DESPERDÍCIO)
-    # ==========================================================
-    with c2:
-        suspeitos = mix_freq[
-            (mix_freq["Pedidos"] >= mix_freq["Pedidos"].quantile(0.75)) &
-            (mix_freq["Pct_Normal"] >= 75)
-        ].copy()
-
-        suspeitos = suspeitos.sort_values("Pedidos", ascending=False).head(10)
-
-        fig = go.Figure(
-            go.Bar(
-                y=[truncate_text(x, 50) for x in suspeitos["Mix"]],
-                x=suspeitos["Pct_Normal"],
-                orientation="h",
-                marker_color=COLORS["danger"],
-                text=[f"{v:.0f}%" for v in suspeitos["Pct_Normal"]],
-                textposition="outside"
-            )
-        )
-
-        fig.update_layout(
-            **plot_layout("Mixes com potencial desperdício", height=420),
-            xaxis=dict(title="% Normalidade"),
-            yaxis=dict(title=None)
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-    info_note(
-        "Mixes com alta frequência e elevada normalidade sugerem possíveis protocolos com excesso de exames."
-    )
-
-    # ==========================================================
-    # 3. MATRIZ ESTRATÉGICA (CLUSTER VISUAL)
-    # ==========================================================
-    section_header("Matriz estratégica de mixes")
-
-    mix_plot = mix_freq[mix_freq["Pedidos"] >= 3].copy()
-
-    fig = go.Figure(
-        go.Scatter(
-            x=mix_plot["Pedidos"],
-            y=mix_plot["Pct_Normal"],
-            mode="markers+text",
-            text=[truncate_text(x, 30) for x in mix_plot["Mix"]],
-            textposition="top center",
-            marker=dict(
-                size=np.clip(mix_plot["Qtd_Exames"] * 5, 10, 60),
-                color=color_scale_list(mix_plot["Pct_Normal"], vmin=0, vmax=100),
-                opacity=0.8,
-                line=dict(color="white", width=1)
-            ),
-            customdata=np.stack([
-                mix_plot["Custo_Medio"],
-                mix_plot["Qtd_Exames"]
-            ], axis=1),
-            hovertemplate=(
-                "<b>%{text}</b><br>"
-                "Pedidos: %{x}<br>"
-                "Normalidade: %{y:.1f}%<br>"
-                "Custo médio: R$ %{customdata[0]:,.2f}<br>"
-                "Qtd exames: %{customdata[1]}<extra></extra>"
-            )
-        )
-    )
-
-    # Linhas de referência
-    fig.add_hline(y=75, line_dash="dot", line_color=COLORS["danger"])
-    fig.add_vline(x=mix_plot["Pedidos"].median(), line_dash="dot")
-
-    fig.update_layout(
-        **plot_layout("Cluster de mixes (volume × normalidade × complexidade)", height=500),
-        xaxis=dict(title="Nº de pedidos"),
-        yaxis=dict(title="% Normalidade")
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-    info_note(
-        "Mixes no quadrante superior direito representam alto volume e alta normalidade — principais candidatos para revisão clínica."
-    )
-
-    # ==========================================================
-    # TABELA COMPLETA
-    # ==========================================================
-    section_header("Detalhamento completo dos mixes")
-
-    tabela = mix_freq.copy()
-    tabela["Custo_Medio"] = tabela["Custo_Medio"].apply(format_money)
-    tabela["Pct"] = tabela["Pct"].apply(lambda x: f"{x:.2f}%")
-
-    st.dataframe(
-        tabela.rename(columns={
-            "Mix": "Mix de Exames",
-            "Pedidos": "Nº de Pedidos",
-            "Qtd_Exames": "Qtd Exames",
-            "Pct_Normal": "% Normal",
-            "Custo_Medio": "Custo Médio",
-            "Pct": "% do Total"
-        }),
-        use_container_width=True,
-        height=500
-    )
 
 # ============================================================
 # RODAPÉ
