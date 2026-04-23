@@ -73,15 +73,6 @@ def inject_css():
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
 
-        :root {{
-            --space-1: 0.35rem;
-            --space-2: 0.6rem;
-            --space-3: 0.9rem;
-            --space-4: 1.2rem;
-            --space-5: 1.6rem;
-            --space-6: 2rem;
-        }}
-
         html, body, [class*="css"] {{
             font-family: 'Inter', sans-serif;
             color: {COLORS["text"]};
@@ -96,8 +87,8 @@ def inject_css():
 
         .block-container {{
             max-width: 1580px;
-            padding-top: 1.2rem;
-            padding-bottom: 2.2rem;
+            padding-top: 1.15rem;
+            padding-bottom: 2rem;
             padding-left: 1.5rem;
             padding-right: 1.5rem;
         }}
@@ -139,24 +130,16 @@ def inject_css():
             visibility: hidden;
         }}
 
-        /* PADRONIZAÇÃO GLOBAL DE BLOCOS */
-        div[data-testid="stVerticalBlock"] > div:has(> div[data-testid="stPlotlyChart"]),
-        div[data-testid="stVerticalBlock"] > div:has(> div[data-testid="stMarkdownContainer"]),
-        div[data-testid="stVerticalBlock"] > div:has(> div[data-testid="stExpander"]),
-        div[data-testid="stVerticalBlock"] > div:has(> iframe) {{
-            margin-bottom: var(--space-3);
-        }}
-
         .hero {{
             position: relative;
             overflow: hidden;
             background:
                 linear-gradient(135deg, rgba(0,75,82,0.98) 0%, rgba(0,153,93,0.94) 58%, rgba(182,212,76,0.88) 100%);
             border-radius: 26px;
-            padding: 1.5rem 1.6rem;
+            padding: 1.5rem 1.6rem 1.5rem 1.6rem;
             box-shadow: 0 16px 40px rgba(0, 75, 82, 0.18);
             border: 1px solid rgba(255,255,255,0.14);
-            margin-bottom: var(--space-4);
+            margin-bottom: 1.1rem;
         }}
 
         .hero:before {{
@@ -177,21 +160,21 @@ def inject_css():
             font-weight: 800;
             line-height: 1.05;
             letter-spacing: -0.03em;
-            margin-bottom: 0.3rem;
+            margin-bottom: 0.25rem;
         }}
 
         .hero-sub {{
             color: rgba(255,255,255,0.90);
             font-size: 0.97rem;
             line-height: 1.5;
-            margin-bottom: var(--space-3);
+            margin-bottom: 0.9rem;
             max-width: 980px;
         }}
 
         .hero-badges {{
             display: flex;
             flex-wrap: wrap;
-            gap: 0.55rem;
+            gap: 0.5rem;
         }}
 
         .badge {{
@@ -209,8 +192,8 @@ def inject_css():
         }}
 
         .section-title {{
-            margin-top: var(--space-4);
-            margin-bottom: var(--space-2);
+            margin-top: 1.1rem;
+            margin-bottom: 0.7rem;
             display: flex;
             align-items: center;
             gap: 0.6rem;
@@ -235,11 +218,11 @@ def inject_css():
         .caption-box {{
             background: linear-gradient(180deg, rgba(193,208,185,0.22), rgba(255,255,255,0.76));
             border: 1px solid {COLORS["border"]};
-            padding: 0.85rem 1rem;
+            padding: 0.8rem 0.95rem;
             border-radius: 16px;
             color: {COLORS["muted"]};
             font-size: 0.82rem;
-            margin-bottom: var(--space-4);
+            margin-bottom: 1rem;
         }}
 
         .kpi-card {{
@@ -251,7 +234,7 @@ def inject_css():
             padding: 1rem 1.05rem 0.95rem 1.05rem;
             min-height: 138px;
             box-shadow: 0 12px 26px rgba(0,75,82,0.07);
-            margin-bottom: var(--space-3);
+            margin-bottom: 0.35rem;
         }}
 
         .kpi-card:before {{
@@ -305,7 +288,7 @@ def inject_css():
         }}
 
         .kpi-bar {{
-            margin-top: 0.7rem;
+            margin-top: 0.65rem;
             height: 8px;
             border-radius: 999px;
             background: #EAF2EE;
@@ -323,22 +306,22 @@ def inject_css():
             border: 1px solid {COLORS["border"]};
             border-left: 4px solid {COLORS["deep"]};
             border-radius: 14px;
-            padding: 0.8rem 0.95rem;
+            padding: 0.75rem 0.9rem;
             color: {COLORS["muted"]};
             font-size: 0.80rem;
             line-height: 1.55;
-            margin-top: var(--space-2);
-            margin-bottom: var(--space-3);
+            margin-top: 0.45rem;
+            margin-bottom: 0.8rem;
         }}
 
         .insight-card {{
             background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(243,249,245,0.96));
             border: 1px solid {COLORS["border"]};
             border-radius: 18px;
-            padding: 0.95rem 1rem;
+            padding: 0.9rem 1rem;
             box-shadow: 0 10px 24px rgba(0,75,82,0.05);
             min-height: 125px;
-            margin-bottom: var(--space-3);
+            margin-bottom: 0.55rem;
         }}
 
         .insight-title {{
@@ -352,7 +335,7 @@ def inject_css():
 
         .insight-text {{
             font-size: 0.84rem;
-            line-height: 1.55;
+            line-height: 1.5;
             color: {COLORS["muted"]};
         }}
 
@@ -360,8 +343,8 @@ def inject_css():
             color: {COLORS["muted"]};
             font-size: 0.75rem;
             text-align: center;
-            padding-top: var(--space-4);
-            margin-top: var(--space-5);
+            padding-top: 1rem;
+            margin-top: 1rem;
             border-top: 1px solid {COLORS["border"]};
         }}
 
@@ -376,17 +359,16 @@ def inject_css():
             border: 1px solid {COLORS["border"]};
             border-radius: 18px;
             background: rgba(255,255,255,0.76);
-            margin-top: var(--space-3);
-            margin-bottom: var(--space-3);
+            margin-top: 0.8rem;
         }}
 
         .stTabs {{
-            margin-top: var(--space-2);
+            margin-top: 0.2rem;
         }}
 
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px;
-            margin-bottom: var(--space-3);
+            margin-bottom: 0.65rem;
         }}
 
         .stTabs [data-baseweb="tab"] {{
