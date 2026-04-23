@@ -389,7 +389,7 @@ def inject_css():
         unsafe_allow_html=True,
     )
 
-    inject_css()
+inject_css()
 
 # ============================================================
 # FUNÇÕES AUXILIARES
