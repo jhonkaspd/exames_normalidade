@@ -21,7 +21,7 @@ import streamlit as st
 # CONFIGURAÇÃO DA PÁGINA
 # ============================================================
 st.set_page_config(
-    page_title="Lab Vision | HU",
+    page_title="Lab Vision | Unimed",
     page_icon="🧪",
     layout="wide",
     initial_sidebar_state="expanded",
