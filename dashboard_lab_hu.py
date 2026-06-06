@@ -782,12 +782,16 @@ reps_alerta = int(df["Flag_Rep_Alerta"].sum())
 taxa_normal = (normais / total_exames * 100) if total_exames else 0
 taxa_rep = (reps / total_exames * 100) if total_exames else 0
 
-custo_rep_mes = float(df["Custo_Rep"].sum())
-custo_rep_ano = custo_rep_mes * 12
-
+# --- Período efetivamente analisado (respeita os filtros do dashboard) ---
 periodo_inicio = pd.to_datetime(df["DataHoraPedido"]).min()
-periodo_fim = pd.to_datetime(df["DataHoraPedido"]).max()
+periodo_fim    = pd.to_datetime(df["DataHoraPedido"]).max()
+dias_periodo   = max((periodo_fim - periodo_inicio).days + 1, 1)
 
+# --- Custo das repetições (normalizado pelo período real) ---
+custo_rep_total = float(df["Custo_Rep"].sum())   # observado no período
+custo_rep_dia   = custo_rep_total / dias_periodo # média diária
+custo_rep_mes   = custo_rep_dia * 30.4375        # média mensal (365/12)
+custo_rep_ano   = custo_rep_dia * 365            # projeção anual correta
 
 # ============================================================
 # HERO
